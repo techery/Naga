@@ -1,7 +1,7 @@
 package naga.examples;
 
-import naga.packetreader.AsciiLinePacketReader;
 import naga.*;
+import naga.packetreader.AsciiLinePacketReader;
 
 import java.io.IOException;
 
@@ -23,7 +23,7 @@ public class EchoServer
 				public void newConnection(NIOSocket nioSocket)
 				{
 					// Set a string reader for incoming packets.
-					nioSocket.setPacketReader(new AsciiLinePacketReader(10));
+					nioSocket.setPacketReader(new AsciiLinePacketReader());
 					nioSocket.setObserver(new SocketObserverAdapter()
 					{
 						public void notifyReadPacket(NIOSocket socket, byte[] packet)

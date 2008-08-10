@@ -13,6 +13,11 @@ public class AsciiLinePacketReader implements PacketReader
 	private ByteBuffer m_currentBuffer;
 	private String m_currentString;
 
+	public AsciiLinePacketReader()
+	{
+		this(80);
+	}
+
 	public AsciiLinePacketReader(int bufferSize)
 	{
 		m_currentBuffer = ByteBuffer.allocate(bufferSize);

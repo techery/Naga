@@ -1,7 +1,7 @@
 package naga;
 
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Channel;
 
 /**
  * @author Christoffer Lerno
@@ -18,4 +18,8 @@ public interface ChannelResponder
 	void notifyCanConnect();
 
 	void notifyWasCancelled();
+
+	SelectableChannel getChannel();
+
+	void setKey(SelectionKey key);
 }

@@ -1,9 +1,10 @@
 package naga;
 
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.SocketChannel;
 import java.io.IOException;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
 /**
  * @author Christoffer Lerno
@@ -14,7 +15,7 @@ public class ServerSocketChannelResponder implements ChannelResponder, NIOServer
 	private final static ServerSocketObserver NULLOBSERVER = new ServerSocketObserverAdapter();
 
 	private final ServerSocketChannel m_channel;
-	private final SelectionKey m_key;
+	private SelectionKey m_key;
 	private final NIOService m_nioService;
 	private boolean m_alive;
 	private long m_totalRefusedConnections;
@@ -28,21 +29,31 @@ public class ServerSocketChannelResponder implements ChannelResponder, NIOServer
 
 	@SuppressWarnings({"ObjectToString"})
 	public ServerSocketChannelResponder(NIOService service,
-	                                    ServerSocketChannel channel,
-	                                    SelectionKey key) throws IOException
+	                                    ServerSocketChannel channel) throws IOException
 	{
 		m_channel = channel;
-		m_key = key;
+		m_key = NIOUtils.NULL_KEY;
 		m_nioService = service;
 		m_alive = true;
 		setConnectionAcceptor(null);
 		m_localPort = m_channel.socket().getLocalPort();
 		m_localAddress = m_channel.socket().getLocalSocketAddress().toString();
-		m_key.interestOps(SelectionKey.OP_ACCEPT);
 		m_totalRefusedConnections = 0;
 		m_totalAcceptedConnections = 0;
 		m_totalFailedConnections = 0;
 		m_totalConnections = 0;
+	}
+
+	public void setKey(SelectionKey key)
+	{
+		if (m_key != NIOUtils.NULL_KEY) throw new IllegalStateException("Tried to set selection key twice");
+		m_key = key;
+		m_key.interestOps(SelectionKey.OP_ACCEPT);
+	}
+
+	public SelectableChannel getChannel()
+	{
+		return m_channel;
 	}
 
 	/**

@@ -1,13 +1,14 @@
 package naga;
 
-import naga.packetwriter.RawPacketWriter;
 import naga.packetreader.RawPacketReader;
+import naga.packetwriter.RawPacketWriter;
 
-import java.nio.channels.SocketChannel;
-import java.nio.channels.SelectionKey;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.io.IOException;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Christoffer Lerno
@@ -17,7 +18,7 @@ public class SocketChannelResponder implements ChannelResponder, NIOSocket
 {
 	private final static byte[] CLOSE_PACKET = new byte[0];
 	private final SocketChannel m_channel;
-	private final SelectionKey m_key;
+	private SelectionKey m_key;
 	private boolean m_alive;
 	private int m_bytesRead;
 	private int m_bytesWritten;
@@ -29,10 +30,10 @@ public class SocketChannelResponder implements ChannelResponder, NIOSocket
 	private PacketWriter m_packetWriter;
 	private SocketObserver m_socketObserver;
 
-	public SocketChannelResponder(SocketChannel socketChannel, SelectionKey key)
+	public SocketChannelResponder(SocketChannel socketChannel)
 	{
 		m_channel = socketChannel;
-		m_key = key;
+		m_key = NIOUtils.NULL_KEY;
 		setObserver(null);
 		m_alive = true;
 		m_maxQueueSize = -1;
@@ -41,7 +42,13 @@ public class SocketChannelResponder implements ChannelResponder, NIOSocket
 		m_packetReader = new RawPacketReader(16);
 		m_bytesInQueue = new AtomicLong(0L);
 		m_packetQueue = new ConcurrentLinkedQueue<byte[]>();
-		if (socketChannel.isConnected())
+	}
+
+	public void setKey(SelectionKey key)
+	{
+		if (m_key != NIOUtils.NULL_KEY) throw new IllegalStateException("Tried to set selection key twice");
+		m_key = key;
+		if (m_channel.isConnected())
 		{
 			key.interestOps(SelectionKey.OP_READ);
 		}
@@ -49,6 +56,7 @@ public class SocketChannelResponder implements ChannelResponder, NIOSocket
 		{
 			key.interestOps(SelectionKey.OP_CONNECT);
 		}
+
 	}
 
 	public void closeAfterWrite()
@@ -301,4 +309,8 @@ public class SocketChannelResponder implements ChannelResponder, NIOSocket
 		m_packetWriter = packetWriter;
 	}
 
+	public SelectableChannel getChannel()
+	{
+		return m_channel;
+	}
 }

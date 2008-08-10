@@ -1,9 +1,11 @@
 package naga;
 
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Channel;
-import java.nio.ByteBuffer;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channel;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
 
 /**
  * @author Christoffer Lerno
@@ -11,6 +13,7 @@ import java.io.IOException;
  */
 public class NIOUtils
 {
+	public final static SelectionKey NULL_KEY = new NullKey();
 
 	public static void closeKeyAndChannelSilently(SelectionKey key, Channel channel)
 	{
@@ -82,6 +85,44 @@ public class NIOUtils
 		catch (Exception e)
 		{
 			// Do nothing
+		}
+	}
+
+	private static class NullKey extends SelectionKey
+	{
+		public void cancel()
+		{
+
+		}
+
+		public SelectableChannel channel()
+		{
+			return null;
+		}
+
+		public int interestOps()
+		{
+			return 0;
+		}
+
+		public SelectionKey interestOps(int ops)
+		{
+			return this;
+		}
+
+		public boolean isValid()
+		{
+			return false;
+		}
+
+		public int readyOps()
+		{
+			return 0;
+		}
+
+		public Selector selector()
+		{
+			return null;
 		}
 	}
 

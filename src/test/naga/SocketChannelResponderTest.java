@@ -4,14 +4,14 @@ package naga;
  * @version $Revision$ $Date$   $Author$
  */
 
-import junit.framework.*;
-import naga.SocketChannelResponder;
+import junit.framework.TestCase;
 import org.easymock.classextension.EasyMock;
 
-import java.nio.channels.SocketChannel;
-import java.nio.channels.SelectionKey;
 import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 
+@SuppressWarnings({"StaticMethodReferencedViaSubclass"})
 public class SocketChannelResponderTest extends TestCase
 {
 	SocketChannelResponder m_socketChannelResponder;
@@ -29,7 +29,8 @@ public class SocketChannelResponderTest extends TestCase
 		EasyMock.expect(m_channel.isConnected()).andReturn(true).once();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_READ)).andReturn(m_key).once();
 		replay();
-		m_socketChannelResponder = new SocketChannelResponder(m_channel, m_key);
+		m_socketChannelResponder = new SocketChannelResponder(m_channel);
+		m_socketChannelResponder.setKey(m_key);
 		m_socketChannelResponder.setMaxQueueSize(3);
 		assertEquals(0, m_socketChannelResponder.getBytesWritten());
 		assertEquals(0, m_socketChannelResponder.getWriteQueueSize());
@@ -56,7 +57,8 @@ public class SocketChannelResponderTest extends TestCase
 		EasyMock.expect(m_channel.isConnected()).andReturn(true).once();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_READ)).andReturn(m_key).once();
 		replay();
-		m_socketChannelResponder = new SocketChannelResponder(m_channel, m_key);
+		m_socketChannelResponder = new SocketChannelResponder(m_channel);
+		m_socketChannelResponder.setKey(m_key);
 		m_socketChannelResponder.setPacketWriter(writer);
 		assertEquals(0, m_socketChannelResponder.getBytesWritten());
 		assertEquals(0, m_socketChannelResponder.getWriteQueueSize());

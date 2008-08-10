@@ -1,9 +1,11 @@
 package naga;
 
-import java.nio.channels.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.*;
 import java.util.Iterator;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * @author Christoffer Lerno
@@ -12,40 +14,49 @@ import java.util.Iterator;
 public class NIOService
 {
 	private final Selector m_selector;
+	private final Queue<ChannelResponder> m_socketsPendingRegistration;
 
 	public NIOService() throws IOException
 	{
 		m_selector = Selector.open();
+		m_socketsPendingRegistration = new ConcurrentLinkedQueue<ChannelResponder>();
 	}
 
 	public void selectBlocking() throws IOException
 	{
+		registerChannelResponder();
 		if (m_selector.select() > 0)
 		{
 			handleSelectedKeys();
 		}
+		registerChannelResponder();
 	}
 
 	public void selectNonBlocking() throws IOException
 	{
+		registerChannelResponder();
 		if (m_selector.selectNow() > 0)
 		{
 			handleSelectedKeys();
 		}
+		registerChannelResponder();
 	}
 
 	public void selectBlocking(long timeout) throws IOException
 	{
+		registerChannelResponder();
 		if (m_selector.select(timeout) > 0)
 		{
 			handleSelectedKeys();
 		}
+		registerChannelResponder();
 	}
 
 	public NIOSocket openSocket(String host, int port) throws IOException
 	{
 		return openSocket(new InetSocketAddress(host, port));
 	}
+
 	public NIOSocket openSocket(InetSocketAddress adress) throws IOException
 	{
 		SocketChannel channel = SocketChannel.open();
@@ -70,9 +81,9 @@ public class NIOService
 		channel.socket().setReuseAddress(true);
 		channel.socket().bind(address, backlog);
 		channel.configureBlocking(false);
-		SelectionKey key = channel.register(m_selector, 0);
-		ServerSocketChannelResponder keyHolder = new ServerSocketChannelResponder(this, channel, key);
-		key.attach(keyHolder);
+		ServerSocketChannelResponder keyHolder = new ServerSocketChannelResponder(this, channel);
+		m_socketsPendingRegistration.add(keyHolder);
+		m_selector.wakeup();
 		return keyHolder;
 	}
 
@@ -80,12 +91,29 @@ public class NIOService
 	public NIOSocket registerSocketChannel(SocketChannel socketChannel) throws IOException
 	{
 		socketChannel.configureBlocking(false);
-		SelectionKey key = socketChannel.register(m_selector, 0);
-		SocketChannelResponder keyHolder = new SocketChannelResponder(socketChannel, key);
-		key.attach(keyHolder);
+		SocketChannelResponder keyHolder = new SocketChannelResponder(socketChannel);
+		m_socketsPendingRegistration.add(keyHolder);
+		m_selector.wakeup();
 		return keyHolder;
 	}
 
+	private void registerChannelResponder()
+	{
+		ChannelResponder channelResponder;
+		while ((channelResponder = m_socketsPendingRegistration.poll()) != null)
+		{
+			try
+			{
+				SelectionKey key = channelResponder.getChannel().register(m_selector, 0);
+				channelResponder.setKey(key);
+				key.attach(channelResponder);
+			}
+			catch (Exception e)
+			{
+				channelResponder.notifyWasCancelled();
+			}
+		}
+	}
 	private void handleSelectedKeys()
 	{
 		// Loop through all selected keys and handle each key at a time.
