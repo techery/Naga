@@ -4,8 +4,7 @@ package naga.packetwriter;
  * @version $Revision$ $Date$   $Author$
  */
 
-import junit.framework.*;
-import naga.packetwriter.RegularPacketWriter;
+import junit.framework.TestCase;
 
 public class RegularPacketWriterTest extends TestCase
 {

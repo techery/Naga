@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+<project name="naga" basedir="." default="build">
+
+	<tstamp/>
+	<property file="version.properties"/>
+
+	<target name="init" description="init">
+		<!-- Create our temporary directories -->
+		<mkdir dir="_TEMP/classes"/>
+		<mkdir dir="_DIST"/>
+	</target>
+
+	<target name="clear" description="clear temporary directories">
+		<delete file="_TEMP" quiet="true"/>
+	</target>
+
+	<target name="compile" depends="init" description="Compile the sources">
+		<javac srcdir="src/main"
+		       destdir="_TEMP/classes"
+		       source="1.5"
+		       optimize="on"/>
+	</target>
+
+	<target name="javadoc" description="Generate javadoc">
+		  <javadoc packagenames="naga.*" sourcepath="src/main"
+		           destdir="_TEMP/docs/api"
+		           author="true"
+		           version="true"
+		           use="true"
+		           windowtitle="Naga API">
+			  <doctitle><![CDATA[<h1>Naga</h1>]]></doctitle>
+			  <tag name="todo" scope="all" description="To do:"/>
+		  </javadoc>
+	</target>
+	
+	<target name="compile_debug" depends="init" description="Compile the sources with debug info">
+			<javac srcdir="src/main" destdir="_TEMP/classes" source="1.5"
+			       debug="yes" debuglevel="lines,source" optimize="on"/>
+	</target>
+
+	<!-- Creates a manifest -->
+	<target name="create_manifest" description="Creates a manifest">
+		<mkdir dir="_TEMP/classes/META-INF"/>
+		<manifest file="_TEMP/classes/META-INF/MANIFEST.MF">
+			<attribute name="Created-By" value="${user.name}"/>
+			 <section name="naga">
+				 <attribute name="Specification-Title" value="Naga"/>
+				 <attribute name="Specification-Version" value="${major.version}.${minor.version}.${build.number}"/>
+				 <attribute name="Specification-Vendor" value="Naga"/>
+				 <attribute name="Implementation-Title" value="naga"/>
+				 <attribute name="Implementation-Version" value="${major.version}.${minor.version}.${build.number} ${TODAY}"/>
+				 <attribute name="Implementation-Vendor" value="Naga"/>
+			 </section>
+		</manifest>
+	</target>
+
+	<target name="build" depends="compile, create_manifest" description="Build jar">
+		<jar destfile="_DIST/naga.jar" basedir="_TEMP/classes" manifest="_TEMP/classes/META-INF/MANIFEST.MF"/>
+	</target>
+
+	<target name="build_debug" depends="compile_debug, create_manifest" description="Build debug jar">
+		<jar destfile="_DIST/naga-debug.jar" basedir="_TEMP/classes" manifest="_TEMP/classes/META-INF/MANIFEST.MF"/>
+	</target>
+
+</project>
+		

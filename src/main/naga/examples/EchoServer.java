@@ -20,6 +20,7 @@ public class EchoServer
 			NIOServerSocket socket = service.openServerSocket(port);
 			socket.setObserver(new ServerSocketObserverAdapter()
 			{
+
 				public void newConnection(NIOSocket nioSocket)
 				{
 					// Set a string reader for incoming packets.
@@ -30,6 +31,11 @@ public class EchoServer
 						{
 							socket.write(packet);
 							socket.write("\n".getBytes());
+						}
+
+						public void notifyDisconnect(NIOSocket nioSocket)
+						{
+							System.out.println("Bye");
 						}
 					});
 				}

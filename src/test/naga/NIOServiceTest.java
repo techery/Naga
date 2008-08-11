@@ -4,15 +4,11 @@ package naga;
  * @version $Revision$ $Date$   $Author$
  */
 
-import junit.framework.*;
-import naga.NIOService;
+import junit.framework.TestCase;
+import org.easymock.classextension.EasyMock;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-
-import org.easymock.classextension.EasyMock;
 
 public class NIOServiceTest extends TestCase
 {

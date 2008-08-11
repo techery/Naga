@@ -4,15 +4,13 @@ package naga;
  * @version $Revision$ $Date$   $Author$
  */
 
-import junit.framework.*;
-import naga.NIOUtils;
-
-import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Channel;
-import java.io.IOException;
-
+import junit.framework.TestCase;
 import org.easymock.classextension.EasyMock;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channel;
+import java.nio.channels.SelectionKey;
 
 public class NIOUtilsTest extends TestCase
 {

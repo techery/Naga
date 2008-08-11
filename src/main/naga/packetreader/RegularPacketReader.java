@@ -1,7 +1,7 @@
 package naga.packetreader;
 
-import naga.PacketReader;
 import naga.NIOUtils;
+import naga.PacketReader;
 
 import java.nio.ByteBuffer;
 

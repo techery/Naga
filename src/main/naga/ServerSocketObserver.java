@@ -1,7 +1,6 @@
 package naga;
 
 import java.io.IOException;
-import java.net.InetAddress;
 
 /**
  * @author Christoffer Lerno

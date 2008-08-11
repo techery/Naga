@@ -47,7 +47,7 @@ public class SocketChannelResponderTest extends TestCase
 		// This fails because the queue would be too big.
 		assertEquals(false, m_socketChannelResponder.write("OO".getBytes()));
 	}
-	
+
 	public void testWrite() throws Exception
 	{
 
@@ -81,7 +81,7 @@ public class SocketChannelResponderTest extends TestCase
 		// Write nothing of the packet.
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_READ)).andReturn(m_key).once();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE)).andReturn(m_key).once();
-		EasyMock.expect(m_channel.write((ByteBuffer)null)).andReturn(0).once();
+		EasyMock.expect(m_channel.write((ByteBuffer) null)).andReturn(0).once();
 		EasyMock.expect(writer.isEmpty()).andReturn(true).once();
 		EasyMock.expect(writer.isEmpty()).andReturn(false).times(2);
 		EasyMock.expect(writer.getBuffer()).andReturn(null).once();
@@ -149,7 +149,7 @@ public class SocketChannelResponderTest extends TestCase
 
 		EasyMock.verify(writer);
 		verify();
-		
+
 	}
 
 	private void reset()
@@ -169,4 +169,5 @@ public class SocketChannelResponderTest extends TestCase
 		EasyMock.replay(m_channel);
 		EasyMock.replay(m_key);
 	}
+
 }

@@ -1,7 +1,7 @@
 package naga.packetwriter;
 
-import naga.PacketWriter;
 import naga.NIOUtils;
+import naga.PacketWriter;
 
 import java.nio.ByteBuffer;
 

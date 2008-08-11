@@ -1,8 +1,5 @@
 package naga;
 
-import naga.SocketObserver;
-import naga.NIOSocket;
-
 /**
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$

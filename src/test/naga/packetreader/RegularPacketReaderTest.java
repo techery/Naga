@@ -4,8 +4,7 @@ package naga.packetreader;
  * @version $Revision$ $Date$   $Author$
  */
 
-import junit.framework.*;
-import naga.packetreader.RegularPacketReader;
+import junit.framework.TestCase;
 
 public class RegularPacketReaderTest extends TestCase
 {

@@ -1,9 +1,5 @@
 package naga;
 
-import naga.SocketObserver;
-import naga.PacketWriter;
-import naga.PacketReader;
-
 /**
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$
