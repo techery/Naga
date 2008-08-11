@@ -43,12 +43,13 @@
 		<mkdir dir="_TEMP/classes/META-INF"/>
 		<manifest file="_TEMP/classes/META-INF/MANIFEST.MF">
 			<attribute name="Created-By" value="${user.name}"/>
+			<attribute name="Sealed" value="true"/>
 			 <section name="naga">
 				 <attribute name="Specification-Title" value="Naga"/>
-				 <attribute name="Specification-Version" value="${major.version}.${minor.version}.${build.number}"/>
+				 <attribute name="Specification-Version" value="${major.version}.${minor.version}"/>
 				 <attribute name="Specification-Vendor" value="Naga"/>
 				 <attribute name="Implementation-Title" value="naga"/>
-				 <attribute name="Implementation-Version" value="${major.version}.${minor.version}.${build.number} ${TODAY}"/>
+				 <attribute name="Implementation-Version" value="Build ${build.number} ${TODAY}"/>
 				 <attribute name="Implementation-Vendor" value="Naga"/>
 			 </section>
 		</manifest>

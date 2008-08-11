@@ -10,7 +10,7 @@ import java.nio.channels.SocketChannel;
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$
  */
-public class ServerSocketChannelResponder implements ChannelResponder, NIOServerSocket
+class ServerSocketChannelResponder implements ChannelResponder, NIOServerSocket
 {
 	private final static ServerSocketObserver NULLOBSERVER = new ServerSocketObserverAdapter();
 
@@ -184,5 +184,9 @@ public class ServerSocketChannelResponder implements ChannelResponder, NIOServer
 	public void setObserver(ServerSocketObserver observer)
 	{
 		m_observer = observer == null ? NULLOBSERVER : observer;
+		if (observer != null && !m_alive)
+		{
+			observer.notifyServerSocketDied();
+		}
 	}
 }

@@ -7,7 +7,7 @@ import java.nio.channels.SelectionKey;
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$
  */
-public interface ChannelResponder
+interface ChannelResponder
 {
 	void notifyCanRead();
 

@@ -44,7 +44,7 @@ public class NIOServiceTest extends TestCase
 		EasyMock.replay(socketObserverServer);
 
 		NIOServerSocket serverSocket = m_service.openServerSocket(new InetSocketAddress(3133), 0);
-		NIOSocket socket = m_service.openSocket(new InetSocketAddress("localhost", 3133));
+		NIOSocket socket = m_service.openSocket("localhost", 3133);
 		serverSocket.setObserver(serverSocketObserver);
 		serverSocket.setConnectionAcceptor(acceptor);
 		socket.setObserver(socketObserverClient);
@@ -78,7 +78,7 @@ public class NIOServiceTest extends TestCase
 		NIOServerSocket serverSocket = m_service.openServerSocket(new InetSocketAddress(3134), 0);
 		serverSocket.setConnectionAcceptor(acceptor);
 		serverSocket.setObserver(serverSocketObserver);
-		NIOSocket socket = m_service.openSocket(new InetSocketAddress("localhost", 3134));
+		NIOSocket socket = m_service.openSocket("localhost", 3134);
 		socket.setObserver(socketOwnerClientSide);
 
 		while (socket.isAlive())

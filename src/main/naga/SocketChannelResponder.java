@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$
  */
-public class SocketChannelResponder implements ChannelResponder, NIOSocket
+class SocketChannelResponder implements ChannelResponder, NIOSocket
 {
 	private final static byte[] CLOSE_PACKET = new byte[0];
 	private final SocketChannel m_channel;
@@ -292,6 +292,20 @@ public class SocketChannelResponder implements ChannelResponder, NIOSocket
 	public void setObserver(SocketObserver socketObserver)
 	{
 		m_socketObserver = socketObserver == null ? SocketObserver.NULL : socketObserver;
+		if (socketObserver != null)
+		{
+			if (isAlive())
+			{
+				if (m_timeOpened > 0)
+				{
+					m_socketObserver.notifyConnect(this);
+				}
+			}
+			else
+			{
+				m_socketObserver.notifyDisconnect(this);
+			}
+		}
 	}
 
 	public boolean isAlive()
