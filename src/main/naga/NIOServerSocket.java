@@ -16,7 +16,7 @@ public interface NIOServerSocket
 
 	long getTotalFailedConnections();
 
-	boolean isAlive();
+	boolean isOpen();
 
 	String getLocalAddress();
 
@@ -24,7 +24,7 @@ public interface NIOServerSocket
 
 	NIOService getService();
 
-	void setObserver(ServerSocketObserver observer);
+	void listen(ServerSocketObserver observer);
 
 	void setConnectionAcceptor(ConnectionAcceptor acceptor);
 }

@@ -174,10 +174,9 @@ public class NIOService
 		channel.socket().setReuseAddress(true);
 		channel.socket().bind(address, backlog);
 		channel.configureBlocking(false);
-		ServerSocketChannelResponder keyHolder = new ServerSocketChannelResponder(this, channel);
-		m_socketsPendingRegistration.add(keyHolder);
-		m_selector.wakeup();
-		return keyHolder;
+		ServerSocketChannelResponder channelResponder = new ServerSocketChannelResponder(this, channel);
+		queueSelectorRegistration(channelResponder);
+		return channelResponder;
 	}
 
 
@@ -192,10 +191,9 @@ public class NIOService
 	NIOSocket registerSocketChannel(SocketChannel socketChannel) throws IOException
 	{
 		socketChannel.configureBlocking(false);
-		SocketChannelResponder keyHolder = new SocketChannelResponder(socketChannel);
-		m_socketsPendingRegistration.add(keyHolder);
-		m_selector.wakeup();
-		return keyHolder;
+		SocketChannelResponder channelResponder = new SocketChannelResponder(socketChannel);
+		queueSelectorRegistration(channelResponder);
+		return channelResponder;
 	}
 
 	/**
@@ -309,6 +307,18 @@ public class NIOService
 		{
 			// Swallow exceptions.
 		}
+	}
+
+
+	/**
+	 * Queue a channel for later registration.
+	 *
+	 * @param channelResponder the responder to use.
+	 */
+	private void queueSelectorRegistration(ChannelResponder channelResponder)
+	{
+		m_socketsPendingRegistration.add(channelResponder);
+		m_selector.wakeup();
 	}
 
 	/**

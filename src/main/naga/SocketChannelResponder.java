@@ -4,10 +4,13 @@ import naga.packetreader.RawPacketReader;
 import naga.packetwriter.RawPacketWriter;
 
 import java.io.IOException;
+import java.net.Socket;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -19,7 +22,7 @@ class SocketChannelResponder implements ChannelResponder, NIOSocket
 	private final static byte[] CLOSE_PACKET = new byte[0];
 	private final SocketChannel m_channel;
 	private SelectionKey m_key;
-	private boolean m_alive;
+	private final AtomicBoolean m_open;
 	private int m_bytesRead;
 	private int m_bytesWritten;
 	private int m_maxQueueSize;
@@ -29,43 +32,59 @@ class SocketChannelResponder implements ChannelResponder, NIOSocket
 	private PacketReader m_packetReader;
 	private PacketWriter m_packetWriter;
 	private SocketObserver m_socketObserver;
+	private SocketObserver m_disconnectObserver;
+	private SocketObserver m_connectObserver;
+	private volatile int m_interestOps;
 
 	public SocketChannelResponder(SocketChannel socketChannel)
 	{
 		m_channel = socketChannel;
-		m_key = NIOUtils.NULL_KEY;
-		setObserver(null);
-		m_alive = true;
+		m_key = null;
+		m_socketObserver = null;
+		m_open = new AtomicBoolean(true);
 		m_maxQueueSize = -1;
 		m_timeOpened = -1;
+		m_interestOps = 0;
+		m_disconnectObserver = null;
+		m_connectObserver = null;
 		m_packetWriter = new RawPacketWriter();
-		m_packetReader = new RawPacketReader(16);
+		m_packetReader = new RawPacketReader();
 		m_bytesInQueue = new AtomicLong(0L);
 		m_packetQueue = new ConcurrentLinkedQueue<byte[]>();
 	}
 
-	public void setKey(SelectionKey key)
+	/**
+	 * Set the SelectionKey for this responder. Should be done by the NIOService.
+	 * <p>
+	 * Will switch to current interest opts.
+	 *
+	 * @param key the new key.
+	 * @throws IllegalStateException if the selection key was already set.
+	 */
+	public synchronized void setKey(SelectionKey key)
 	{
-		if (m_key != NIOUtils.NULL_KEY) throw new IllegalStateException("Tried to set selection key twice");
+		if (m_key != null) throw new IllegalStateException("Tried to set selection key twice");
 		m_key = key;
-		if (m_channel.isConnected())
+		if (!isOpen())
 		{
-			key.interestOps(SelectionKey.OP_READ);
+			// If we closed this before receiving the key, we should cancel the key.
+			NIOUtils.cancelKeySilently(key);
+			return;
 		}
-		else
+		if (!m_channel.isConnected())
 		{
-			key.interestOps(SelectionKey.OP_CONNECT);
+			m_interestOps |= SelectionKey.OP_CONNECT;
 		}
-
+		synchronizeKeyInterestOps();
 	}
 
-	public void closeAfterWrite()
+	public synchronized void closeAfterWrite()
 	{
 		// Add a null packet signaling close.
 		m_packetQueue.offer(CLOSE_PACKET);
 
 		// Make sure the interests are set.
-		m_key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+		addInterest(SelectionKey.OP_WRITE);
 	}
 
 	public boolean write(byte[] packet)
@@ -79,16 +98,14 @@ class SocketChannelResponder implements ChannelResponder, NIOSocket
 
 		// Add the packet.
 		m_packetQueue.offer(packet);
-
-		// Make sure the interests are set.
-		m_key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+		addInterest(SelectionKey.OP_WRITE);
 
 		return true;
 	}
 
 	public void notifyCanRead()
 	{
-		if (!m_alive) return;
+		if (!m_open.get()) return;
 		try
 		{
 			int read = m_channel.read(m_packetReader.getBuffer());
@@ -106,7 +123,7 @@ class SocketChannelResponder implements ChannelResponder, NIOSocket
 				}
 			}
 		}
-		catch (IOException e)
+		catch (Exception e)
 		{
 			close();
 		}
@@ -135,8 +152,8 @@ class SocketChannelResponder implements ChannelResponder, NIOSocket
 	{
 		try
 		{
-			m_key.interestOps(SelectionKey.OP_READ);
-			if (m_alive)
+			deleteInterest(SelectionKey.OP_WRITE);
+			if (isOpen())
 			{
 				fillCurrentOutgoingBuffer();
 
@@ -150,7 +167,7 @@ class SocketChannelResponder implements ChannelResponder, NIOSocket
 					if (written == 0)
 					{
 						// Change the interest ops in case we still have things to write.
-						m_key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+						addInterest(SelectionKey.OP_WRITE);
 						return;
 					}
 					if (m_packetWriter.isEmpty())
@@ -160,7 +177,7 @@ class SocketChannelResponder implements ChannelResponder, NIOSocket
 				}
 			}
 		}
-		catch (IOException e)
+		catch (Exception e)
 		{
 			close();
 		}
@@ -171,21 +188,25 @@ class SocketChannelResponder implements ChannelResponder, NIOSocket
 		throw new UnsupportedOperationException("Operation not supported for regular sockets");
 	}
 
+	public String getIp()
+	{
+		return getSocket().getInetAddress().getHostAddress();
+	}
 	public void notifyCanConnect()
 	{
 		try
 		{
-			if (m_alive)
+			if (isOpen())
 			{
 				if (m_channel.finishConnect())
 				{
-					m_key.interestOps(SelectionKey.OP_READ);
-					m_socketObserver.notifyConnect(this);
+					deleteInterest(SelectionKey.OP_CONNECT);
+					notifyObserverOfConnect();
 					m_timeOpened = System.currentTimeMillis();
 				}
 			}
 		}
-		catch (IOException e)
+		catch (Exception e)
 		{
 			close();
 		}
@@ -198,46 +219,19 @@ class SocketChannelResponder implements ChannelResponder, NIOSocket
 
 	public void close()
 	{
-		if (m_alive)
+		if (m_open.compareAndSet(true, false))
 		{
 			m_timeOpened = -1;
-			m_alive = false;
-			m_socketObserver.notifyDisconnect(this);
 			m_packetQueue.clear();
 			m_bytesInQueue.set(0);
 			NIOUtils.closeKeyAndChannelSilently(m_key, m_channel);
+			notifyObserverOfDisconnect();
 		}
 	}
 
-	public String getIp()
+	public Socket getSocket()
 	{
-		if (m_alive)
-		{
-			try
-			{
-				return m_channel.socket().getInetAddress().getHostAddress();
-			}
-			catch (Exception e)
-			{
-				// Do nothing, return the default -1
-			}
-		}
-		return "0.0.0.0";
-	}
-	public int getLocalPort()
-	{
-		if (m_alive)
-		{
-			try
-			{
-				return m_channel.socket().getLocalPort();
-			}
-			catch (Exception e)
-			{
-				// Do nothing, return the default -1
-			}
-		}
-		return -1;
+		return m_channel.socket();
 	}
 
 	public long getBytesRead()
@@ -267,7 +261,14 @@ class SocketChannelResponder implements ChannelResponder, NIOSocket
 
 	public String toString()
 	{
-		return "" + getIp() + ":" + getLocalPort();
+		try
+		{
+			return getSocket().toString();
+		}
+		catch (Exception e)
+		{
+			return "Closed NIO Socket";
+		}
 	}
 
 	/**
@@ -289,28 +290,66 @@ class SocketChannelResponder implements ChannelResponder, NIOSocket
 		m_maxQueueSize = maxQueueSize;
 	}
 
-	public void setObserver(SocketObserver socketObserver)
+	public void listen(SocketObserver socketObserver)
 	{
-		m_socketObserver = socketObserver == null ? SocketObserver.NULL : socketObserver;
-		if (socketObserver != null)
+		// Synchronization ensures that listen is not called from two threads at the same time.
+		synchronized (this)
 		{
-			if (isAlive())
-			{
-				if (m_timeOpened > 0)
-				{
-					m_socketObserver.notifyConnect(this);
-				}
-			}
-			else
-			{
-				m_socketObserver.notifyDisconnect(this);
-			}
+			if (m_socketObserver != null) throw new IllegalStateException("There is already an observer listening to this socket.");
+			m_socketObserver = socketObserver == null ? SocketObserver.NULL : socketObserver;
+		}
+		if (m_channel.isConnected())
+		{
+			notifyObserverOfConnect();
+		}
+		if (!isOpen())
+		{
+			notifyObserverOfDisconnect();
+		}
+		addInterest(SelectionKey.OP_READ);
+	}
+
+	private void notifyObserverOfConnect()
+	{
+		synchronized (this)
+		{
+			if (m_connectObserver == m_socketObserver) return;
+			m_connectObserver = m_socketObserver;
+		}
+		try
+		{
+			m_connectObserver.notifyConnect(this);
+			System.out.println(this);
+		}
+		catch (Exception e)
+		{
+			// We have no way of properly logging this, which is why we log it to stderr
+			e.printStackTrace();
 		}
 	}
 
-	public boolean isAlive()
+	private void notifyObserverOfDisconnect()
 	{
-		return m_alive;
+		synchronized (this)
+		{
+			if (m_disconnectObserver == m_socketObserver) return;
+			m_disconnectObserver = m_socketObserver;
+		}
+		try
+		{
+			m_disconnectObserver.notifyDisconnect(this);
+		}
+		catch (Exception e)
+		{
+			// We have no way of properly logging this, which is why we log it to stderr
+			e.printStackTrace();
+		}
+	}
+
+
+	public boolean isOpen()
+	{
+		return m_open.get();
 	}
 
 	public void setPacketReader(PacketReader packetReader)
@@ -326,5 +365,46 @@ class SocketChannelResponder implements ChannelResponder, NIOSocket
 	public SelectableChannel getChannel()
 	{
 		return m_channel;
+	}
+
+	/**
+	 * Add an interest to the key, or change the currently pending interest.
+	 *
+	 * @param interest the interest to add.
+	 */
+	private void addInterest(int interest)
+	{
+		m_interestOps |= interest;
+		synchronizeKeyInterestOps();
+	}
+
+	/**
+	 * Synchronizes the desired interest ops with the key interests ops,
+	 * <em>if</em> the key is initialized.
+	 */
+	private void synchronizeKeyInterestOps()
+	{
+		if (m_key != null)
+		{
+			try
+			{
+				m_key.interestOps(m_interestOps);
+			}
+			catch (CancelledKeyException e)
+			{
+				// Ignore these.
+			}
+		}
+	}
+
+	/**
+	 * Deleted an interest on a key.
+	 *
+	 * @param interest the interest to delete.
+	 */
+	private void deleteInterest(int interest)
+	{
+		m_interestOps = m_interestOps & ~interest;
+		synchronizeKeyInterestOps();
 	}
 }

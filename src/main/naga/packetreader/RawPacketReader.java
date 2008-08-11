@@ -12,9 +12,9 @@ public class RawPacketReader implements PacketReader
 {
 	private final ByteBuffer m_buffer;
 
-	public RawPacketReader(int bufferSize)
+	public RawPacketReader()
 	{
-		m_buffer = ByteBuffer.allocate(bufferSize);
+		m_buffer = ByteBuffer.allocate(1);
 	}
 
 	public ByteBuffer getBuffer()

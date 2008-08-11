@@ -26,14 +26,14 @@ public class ValidationServer
 		{
 			NIOService service = new NIOService();
 			NIOServerSocket socket = service.openServerSocket(port);
-			socket.setObserver(new ServerSocketObserverAdapter()
+			socket.listen(new ServerSocketObserverAdapter()
 			{
 				public void newConnection(NIOSocket nioSocket)
 				{
 					// Set a string reader for incoming packets.
 					nioSocket.setPacketReader(new RegularPacketReader(1, true));
 					nioSocket.setPacketWriter(new RegularPacketWriter(1, true));
-					nioSocket.setObserver(new SocketObserverAdapter()
+					nioSocket.listen(new SocketObserverAdapter()
 					{
 						public void notifyReadPacket(NIOSocket socket, byte[] packet)
 						{

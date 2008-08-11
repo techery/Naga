@@ -12,12 +12,9 @@ import java.nio.channels.SocketChannel;
  */
 class ServerSocketChannelResponder implements ChannelResponder, NIOServerSocket
 {
-	private final static ServerSocketObserver NULLOBSERVER = new ServerSocketObserverAdapter();
-
 	private final ServerSocketChannel m_channel;
 	private SelectionKey m_key;
 	private final NIOService m_nioService;
-	private boolean m_alive;
 	private long m_totalRefusedConnections;
 	private long m_totalAcceptedConnections;
 	private long m_totalFailedConnections;
@@ -26,15 +23,17 @@ class ServerSocketChannelResponder implements ChannelResponder, NIOServerSocket
 	private int m_localPort;
 	private ConnectionAcceptor m_connectionAcceptor;
 	private ServerSocketObserver m_observer;
+	private boolean m_disconnectReported;
 
 	@SuppressWarnings({"ObjectToString"})
 	public ServerSocketChannelResponder(NIOService service,
 	                                    ServerSocketChannel channel) throws IOException
 	{
 		m_channel = channel;
-		m_key = NIOUtils.NULL_KEY;
+		m_key = null;
 		m_nioService = service;
-		m_alive = true;
+		m_disconnectReported = false;
+		m_observer = null;
 		setConnectionAcceptor(null);
 		m_localPort = m_channel.socket().getLocalPort();
 		m_localAddress = m_channel.socket().getLocalSocketAddress().toString();
@@ -44,11 +43,25 @@ class ServerSocketChannelResponder implements ChannelResponder, NIOServerSocket
 		m_totalConnections = 0;
 	}
 
-	public void setKey(SelectionKey key)
+	public synchronized void setKey(SelectionKey key)
 	{
-		if (m_key != NIOUtils.NULL_KEY) throw new IllegalStateException("Tried to set selection key twice");
+		if (m_key != null) throw new IllegalStateException("Tried to set selection key twice");
 		m_key = key;
-		m_key.interestOps(SelectionKey.OP_ACCEPT);
+		if (!m_channel.isOpen())
+		{
+			// In case the channel already was closed when we
+			NIOUtils.cancelKeySilently(m_key);
+			return;
+		}
+		startAcceptIfReady();
+	}
+
+	private void startAcceptIfReady()
+	{
+		if (m_key != null && m_observer != null)
+		{
+			m_key.interestOps(SelectionKey.OP_ACCEPT);
+		}
 	}
 
 	public SelectableChannel getChannel()
@@ -110,11 +123,11 @@ class ServerSocketChannelResponder implements ChannelResponder, NIOServerSocket
 		throw new UnsupportedOperationException("Not supported for server sockets.");
 	}
 
-	private void socketDied()
+	private synchronized void socketDied()
 	{
-		if (m_alive)
+		if (!m_disconnectReported)
 		{
-			m_alive = false;
+			m_disconnectReported = true;
 			m_observer.notifyServerSocketDied();
 		}
 	}
@@ -145,9 +158,9 @@ class ServerSocketChannelResponder implements ChannelResponder, NIOServerSocket
 		return m_totalFailedConnections;
 	}
 
-	public boolean isAlive()
+	public boolean isOpen()
 	{
-		return m_alive;
+		return m_channel.isOpen();
 	}
 
 	public long getTotalAcceptedConnections()
@@ -168,7 +181,7 @@ class ServerSocketChannelResponder implements ChannelResponder, NIOServerSocket
 	@Override
 	public String toString()
 	{
-		return m_localAddress + ":" + m_localPort + (m_alive ? "" : "<CLOSED>");
+		return m_localAddress + ":" + m_localPort;
 	}
 
 	public NIOService getService()
@@ -181,12 +194,10 @@ class ServerSocketChannelResponder implements ChannelResponder, NIOServerSocket
 		m_connectionAcceptor = connectionAcceptor == null ? ConnectionAcceptor.DENY : connectionAcceptor;
 	}
 
-	public void setObserver(ServerSocketObserver observer)
+	public void listen(ServerSocketObserver observer)
 	{
-		m_observer = observer == null ? NULLOBSERVER : observer;
-		if (observer != null && !m_alive)
-		{
-			observer.notifyServerSocketDied();
-		}
+		if (m_observer != null) throw new IllegalArgumentException("There is already a listener attached to this socket");
+		m_observer = observer;
+		startAcceptIfReady();
 	}
 }

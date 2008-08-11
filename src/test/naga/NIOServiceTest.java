@@ -33,10 +33,11 @@ public class NIOServiceTest extends TestCase
 		{
 			public void newConnection(NIOSocket nioSocket)
 			{
-				nioSocket.setObserver(socketObserverServer);
+				nioSocket.listen(socketObserverServer);
 			}
 		};
 
+		socketObserverServer.notifyConnect((NIOSocket) EasyMock.anyObject());
 		socketObserverClient.notifyConnect((NIOSocket) EasyMock.anyObject());
 		EasyMock.expectLastCall().once();
 
@@ -45,9 +46,9 @@ public class NIOServiceTest extends TestCase
 
 		NIOServerSocket serverSocket = m_service.openServerSocket(new InetSocketAddress(3133), 0);
 		NIOSocket socket = m_service.openSocket("localhost", 3133);
-		serverSocket.setObserver(serverSocketObserver);
+		socket.listen(socketObserverClient);
+		serverSocket.listen(serverSocketObserver);
 		serverSocket.setConnectionAcceptor(acceptor);
-		socket.setObserver(socketObserverClient);
 		while (serverSocket.getTotalConnections() == 0)
 		{
 			m_service.selectBlocking();
@@ -77,11 +78,11 @@ public class NIOServiceTest extends TestCase
 
 		NIOServerSocket serverSocket = m_service.openServerSocket(new InetSocketAddress(3134), 0);
 		serverSocket.setConnectionAcceptor(acceptor);
-		serverSocket.setObserver(serverSocketObserver);
+		serverSocket.listen(serverSocketObserver);
 		NIOSocket socket = m_service.openSocket("localhost", 3134);
-		socket.setObserver(socketOwnerClientSide);
+		socket.listen(socketOwnerClientSide);
 
-		while (socket.isAlive())
+		while (socket.isOpen())
 		{
 			m_service.selectBlocking();
 		}

@@ -6,11 +6,26 @@ package naga;
  */
 public interface NIOSocket
 {
+	/**
+	 * Write a packet of bytes asynchronously on this socket.
+	 * <p>
+	 * The bytes will be sent to the PacketWriter belonging to this
+	 * socket for dispatch. However, if the queue is full (i.e. the new
+	 * queue size would exceed <code>getMaxQueueSize()</code>),
+	 * the packet is discarded and the method returns false.
+	 * <p>
+	 * <em>This method is thread-safe.</em>
+	 *
+	 * @param packet the packet to send.
+	 * @return true if the packet was queued, false if the queue limit
+	 * was reached and the packet was thrown away.
+	 */
 	boolean write(byte[] packet);
 
+	/**
+	 * @return the remote IP of this socket.
+	 */
 	String getIp();
-
-	int getLocalPort();
 
 	/**
 	 * @return the total number of bytes read on this socket.
@@ -28,8 +43,14 @@ public interface NIOSocket
 	long getTimeOpen();
 
 	/**
-	 * @return the number of bytes waiting to be written in the underlying queue. This excludes the
-	 * amount of bytes in the currently writing packet.
+	 * This method returns the number of bytes queued for dispatch.
+	 * This size is compared against the maximum queue size to determine if additional packets
+	 * will be refused or not.
+	 * <p>
+	 * However, this number does not include the packet currently waiting to be written.
+	 *
+	 * @return the total size of the packets waiting to be dispatched, exluding the currently
+	 * dispatching packet.
 	 */
 	long getWriteQueueSize();
 
@@ -63,19 +84,27 @@ public interface NIOSocket
 	void setPacketWriter(PacketWriter packetWriter);
 
 	/**
-	 * Sets the receiver of packets for this socket.
+	 * Start to listen to this socket.
 	 *
 	 * @param socketObserver the observer to receive packets and be notified of disconnects.
 	 */
-	void setObserver(SocketObserver socketObserver);
+	void listen(SocketObserver socketObserver);
 
-	boolean isAlive();
+	/**
+	 * Returns the current state of the socket.
+	 *
+	 * @return true if the socket is open, false if closed.
+	 */
+	boolean isOpen();
 
 	/**
 	 * Causes the socket to close after writing the current entries in the queue
-	 * (consequent entries will be thrown away)
+	 * (consequent entries will be thrown away).
 	 */
 	void closeAfterWrite();
 
+	/**
+	 * Immediately closes this socket.
+	 */
 	void close();
 }
