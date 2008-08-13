@@ -39,7 +39,6 @@ public class ValidationServer
 						{
 							try
 							{
-								System.out.println("efefef");
 								DataInputStream stream = new DataInputStream(new ByteArrayInputStream(packet));
 								String user = stream.readUTF();
 								String password = stream.readUTF();

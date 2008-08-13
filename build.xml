@@ -58,7 +58,9 @@
 	<target name="build" depends="compile, create_manifest" description="Build jar">
 		<buildnumber file="version.properties"/>
 		<delete dir="_TEMP/classes/src"/>
-		<jar destfile="_DIST/naga-${major.version}_${minor.version}-r${build.number}.jar" basedir="_TEMP/classes" manifest="_TEMP/classes/META-INF/MANIFEST.MF"/>
+		<jar destfile="_DIST/naga-${major.version}_${minor.version}-r${build.number}.jar"
+		     excludes="**/examples/**"
+		     basedir="_TEMP/classes" manifest="_TEMP/classes/META-INF/MANIFEST.MF"/>
 		<copydir src="src/main/" dest="_TEMP/classes/src"/>
 		<jar destfile="_DIST/naga-debug-${major.version}_${minor.version}-r${build.number}.jar" manifest="_TEMP/classes/META-INF/MANIFEST.MF">
 			<fileset dir="_TEMP/classes"/>
