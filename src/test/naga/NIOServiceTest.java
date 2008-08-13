@@ -23,7 +23,7 @@ public class NIOServiceTest extends TestCase
 	{
 		ConnectionAcceptor acceptor = EasyMock.createMock(ConnectionAcceptor.class);
 
-		EasyMock.expect(acceptor.acceptConnection((String) EasyMock.anyObject())).andReturn(true).once();
+		EasyMock.expect(acceptor.acceptConnection((InetSocketAddress) EasyMock.anyObject())).andReturn(true).once();
 		EasyMock.replay(acceptor);
 
 		final SocketObserver socketObserverClient = EasyMock.createMock(SocketObserver.class);
@@ -37,8 +37,9 @@ public class NIOServiceTest extends TestCase
 			}
 		};
 
-		socketObserverServer.notifyConnect((NIOSocket) EasyMock.anyObject());
-		socketObserverClient.notifyConnect((NIOSocket) EasyMock.anyObject());
+		socketObserverServer.connectionOpened((NIOSocket) EasyMock.anyObject());
+		EasyMock.expectLastCall().once();
+		socketObserverClient.connectionOpened((NIOSocket) EasyMock.anyObject());
 		EasyMock.expectLastCall().once();
 
 		EasyMock.replay(socketObserverClient);
@@ -53,9 +54,12 @@ public class NIOServiceTest extends TestCase
 		{
 			m_service.selectBlocking();
 		}
+		m_service.selectNonBlocking();
+		assertEquals("[]", m_service.getQueue().toString());
 		EasyMock.verify(socketObserverClient);
 		EasyMock.verify(socketObserverServer);
 		EasyMock.verify(acceptor);
+		assertEquals(socket.getAddress().getAddress(), serverSocket.getAddress().getAddress());
 		assertEquals(1, serverSocket.getTotalConnections());
 		assertEquals(1, serverSocket.getTotalAcceptedConnections());
 	}
@@ -64,15 +68,15 @@ public class NIOServiceTest extends TestCase
 	{
 		ConnectionAcceptor acceptor = EasyMock.createMock(ConnectionAcceptor.class);
 
-		EasyMock.expect(acceptor.acceptConnection((String) EasyMock.anyObject())).andReturn(false).once();
+		EasyMock.expect(acceptor.acceptConnection((InetSocketAddress) EasyMock.anyObject())).andReturn(false).once();
 		EasyMock.replay(acceptor);
 
 		ServerSocketObserver serverSocketObserver = EasyMock.createMock(ServerSocketObserver.class);
 		EasyMock.replay(serverSocketObserver);
 
 		SocketObserver socketOwnerClientSide = EasyMock.createMock(SocketObserver.class);
-		socketOwnerClientSide.notifyConnect((NIOSocket) EasyMock.anyObject());
-		socketOwnerClientSide.notifyDisconnect((NIOSocket) EasyMock.anyObject());
+		socketOwnerClientSide.connectionOpened((NIOSocket) EasyMock.anyObject());
+		socketOwnerClientSide.connectionBroken((NIOSocket) EasyMock.anyObject(), null);
 		EasyMock.expectLastCall().once();
 		EasyMock.replay(socketOwnerClientSide);
 

@@ -1,22 +1,24 @@
 package naga;
 
 /**
+ * Class with null-implementation of all SocketObserver callbacks.
+ * 
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$
  */
 public class SocketObserverAdapter implements SocketObserver
 {
 
-	public void notifyDisconnect(NIOSocket nioSocket)
+	public void connectionBroken(NIOSocket nioSocket, Exception exception)
 	{
 	}
 
-	public void notifyReadPacket(NIOSocket socket, byte[] packet)
+	public void packetReceived(NIOSocket socket, byte[] packet)
 	{
 
 	}
 
-	public void notifyConnect(NIOSocket nioSocket)
+	public void connectionOpened(NIOSocket nioSocket)
 	{
 	}
 }

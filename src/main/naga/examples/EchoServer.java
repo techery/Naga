@@ -29,7 +29,7 @@ public class EchoServer
 					nioSocket.setPacketReader(new AsciiLinePacketReader());
 					nioSocket.listen(new SocketObserverAdapter()
 					{
-						public void notifyReadPacket(NIOSocket socket, byte[] packet)
+						public void packetReceived(NIOSocket socket, byte[] packet)
 						{
 							String string = new String(packet).trim();
 							System.out.println("Echo: '" + string + "' to " + socket.getIp());
@@ -43,7 +43,7 @@ public class EchoServer
 							socket.write("\n".getBytes());
 						}
 
-						public void notifyDisconnect(NIOSocket nioSocket)
+						public void connectionBroken(NIOSocket nioSocket, Exception exception)
 						{
 							System.out.println("Client " + nioSocket.getIp() + " disconnected.");
 						}

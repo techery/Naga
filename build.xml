@@ -56,11 +56,14 @@
 	</target>
 
 	<target name="build" depends="compile, create_manifest" description="Build jar">
-		<jar destfile="_DIST/naga.jar" basedir="_TEMP/classes" manifest="_TEMP/classes/META-INF/MANIFEST.MF"/>
-	</target>
-
-	<target name="build_debug" depends="compile_debug, create_manifest" description="Build debug jar">
-		<jar destfile="_DIST/naga-debug.jar" basedir="_TEMP/classes" manifest="_TEMP/classes/META-INF/MANIFEST.MF"/>
+		<buildnumber file="version.properties"/>
+		<delete dir="_TEMP/classes/src"/>
+		<jar destfile="_DIST/naga-${major.version}_${minor.version}-r${build.number}.jar" basedir="_TEMP/classes" manifest="_TEMP/classes/META-INF/MANIFEST.MF"/>
+		<copydir src="src/main/" dest="_TEMP/classes/src"/>
+		<jar destfile="_DIST/naga-debug-${major.version}_${minor.version}-r${build.number}.jar" manifest="_TEMP/classes/META-INF/MANIFEST.MF">
+			<fileset dir="_TEMP/classes"/>
+			<fileset dir="_TEMP" includes="docs/**"/>
+		</jar>
 	</target>
 
 </project>

@@ -35,7 +35,7 @@ public class ValidationServer
 					nioSocket.setPacketWriter(new RegularPacketWriter(1, true));
 					nioSocket.listen(new SocketObserverAdapter()
 					{
-						public void notifyReadPacket(NIOSocket socket, byte[] packet)
+						public void packetReceived(NIOSocket socket, byte[] packet)
 						{
 							try
 							{

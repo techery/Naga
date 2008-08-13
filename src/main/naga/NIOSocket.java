@@ -4,7 +4,7 @@ package naga;
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$
  */
-public interface NIOSocket
+public interface NIOSocket extends NIOAbstractSocket
 {
 	/**
 	 * Write a packet of bytes asynchronously on this socket.
@@ -21,11 +21,6 @@ public interface NIOSocket
 	 * was reached and the packet was thrown away.
 	 */
 	boolean write(byte[] packet);
-
-	/**
-	 * @return the remote IP of this socket.
-	 */
-	String getIp();
 
 	/**
 	 * @return the total number of bytes read on this socket.
@@ -84,27 +79,20 @@ public interface NIOSocket
 	void setPacketWriter(PacketWriter packetWriter);
 
 	/**
-	 * Start to listen to this socket.
+	 * Opens the socket for reads.
+	 * <p>
+	 * The socket observer will receive connects, disconnects and packets.
+	 * If the socket was opened or disconnected before the observer was attached,
+	 * the socket observer will still receive those callbacks.
 	 *
-	 * @param socketObserver the observer to receive packets and be notified of disconnects.
+	 * @param socketObserver the observer to receive packets and be notified of connects/disconnects.
 	 */
 	void listen(SocketObserver socketObserver);
 
-	/**
-	 * Returns the current state of the socket.
-	 *
-	 * @return true if the socket is open, false if closed.
-	 */
-	boolean isOpen();
 
 	/**
 	 * Causes the socket to close after writing the current entries in the queue
 	 * (consequent entries will be thrown away).
 	 */
 	void closeAfterWrite();
-
-	/**
-	 * Immediately closes this socket.
-	 */
-	void close();
 }

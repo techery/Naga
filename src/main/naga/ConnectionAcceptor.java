@@ -1,5 +1,7 @@
 package naga;
 
+import java.net.InetSocketAddress;
+
 /**
  * The ConnectionAcceptor is used by the NIOServerSocket to determine
  * if a connection should be accepted or refused.
@@ -23,7 +25,7 @@ public interface ConnectionAcceptor
 	 */
 	ConnectionAcceptor DENY = new ConnectionAcceptor()
 	{
-		public boolean acceptConnection(String ip)
+		public boolean acceptConnection(InetSocketAddress address)
 		{
 			return false;
 		}
@@ -34,7 +36,7 @@ public interface ConnectionAcceptor
 	 */
 	ConnectionAcceptor ALLOW = new ConnectionAcceptor()
 	{
-		public boolean acceptConnection(String ip)
+		public boolean acceptConnection(InetSocketAddress address)
 		{
 			return true;
 		}
@@ -49,8 +51,8 @@ public interface ConnectionAcceptor
 	 * For this reason it is recommended that this method should return fairly quickly
 	 * (e.g. don't make reverse ip lookups or similar - potentially very slow - calls).
 	 *
-	 * @param ip of the connection as a string.
+	 * @param address
 	 * @return true to accept, false to refuse.
 	 */
-	boolean acceptConnection(String ip);
+	boolean acceptConnection(InetSocketAddress address);
 }

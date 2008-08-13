@@ -1,7 +1,7 @@
 package naga;
 
 import java.io.IOException;
-import java.nio.channels.SelectableChannel;
+import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -10,75 +10,49 @@ import java.nio.channels.SocketChannel;
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$
  */
-class ServerSocketChannelResponder implements ChannelResponder, NIOServerSocket
+class ServerSocketChannelResponder extends ChannelResponder implements NIOServerSocket
 {
-	private final ServerSocketChannel m_channel;
-	private SelectionKey m_key;
-	private final NIOService m_nioService;
 	private long m_totalRefusedConnections;
 	private long m_totalAcceptedConnections;
 	private long m_totalFailedConnections;
 	private long m_totalConnections;
-	private String m_localAddress;
-	private int m_localPort;
-	private ConnectionAcceptor m_connectionAcceptor;
+	private volatile ConnectionAcceptor m_connectionAcceptor;
 	private ServerSocketObserver m_observer;
-	private boolean m_disconnectReported;
 
 	@SuppressWarnings({"ObjectToString"})
 	public ServerSocketChannelResponder(NIOService service,
-	                                    ServerSocketChannel channel) throws IOException
+	                                    ServerSocketChannel channel,
+	                                    InetSocketAddress address) throws IOException
 	{
-		m_channel = channel;
-		m_key = null;
-		m_nioService = service;
-		m_disconnectReported = false;
+		super(service, channel, address);
 		m_observer = null;
 		setConnectionAcceptor(null);
-		m_localPort = m_channel.socket().getLocalPort();
-		m_localAddress = m_channel.socket().getLocalSocketAddress().toString();
 		m_totalRefusedConnections = 0;
 		m_totalAcceptedConnections = 0;
 		m_totalFailedConnections = 0;
 		m_totalConnections = 0;
 	}
 
-	public synchronized void setKey(SelectionKey key)
+	public void keyInitialized()
 	{
-		if (m_key != null) throw new IllegalStateException("Tried to set selection key twice");
-		m_key = key;
-		if (!m_channel.isOpen())
-		{
-			// In case the channel already was closed when we
-			NIOUtils.cancelKeySilently(m_key);
-			return;
-		}
-		startAcceptIfReady();
+		// Do nothing, since the accept automatically will be set.
 	}
 
-	private void startAcceptIfReady()
+	public ServerSocketChannel getChannel()
 	{
-		if (m_key != null && m_observer != null)
-		{
-			m_key.interestOps(SelectionKey.OP_ACCEPT);
-		}
-	}
-
-	public SelectableChannel getChannel()
-	{
-		return m_channel;
+		return (ServerSocketChannel) super.getChannel();
 	}
 
 	/**
 	 * Callback to tell the object that there is at least one accept that can be done on the server socket.
 	 */
-	public void notifyCanAccept()
+	public void socketReadyForAccept()
 	{
 		m_totalConnections++;
 		SocketChannel socketChannel = null;
 		try
 		{
-			socketChannel = m_channel.accept();
+			socketChannel = getChannel().accept();
 			if (socketChannel == null)
 			{
 				// This means there actually wasn't any connection waiting,
@@ -87,8 +61,9 @@ class ServerSocketChannelResponder implements ChannelResponder, NIOServerSocket
 				return;
 			}
 
+			InetSocketAddress address = (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
 			// Is this connection acceptable?
-			if (!m_connectionAcceptor.acceptConnection(socketChannel.socket().getInetAddress().getHostAddress()))
+			if (!m_connectionAcceptor.acceptConnection(address))
 			{
 				// Connection was refused by the socket owner, so update stats and close connection
 				m_totalRefusedConnections++;
@@ -96,7 +71,7 @@ class ServerSocketChannelResponder implements ChannelResponder, NIOServerSocket
 				return;
 			}
 
-			m_observer.newConnection(m_nioService.registerSocketChannel(socketChannel));
+			m_observer.newConnection(getNIOService().registerSocketChannel(socketChannel, address));
 			m_totalAcceptedConnections++;
 		}
 		catch (IOException e)
@@ -104,43 +79,13 @@ class ServerSocketChannelResponder implements ChannelResponder, NIOServerSocket
 			// Close channel in case it opened.
 			NIOUtils.closeChannelSilently(socketChannel);
 			m_totalFailedConnections++;
-			m_observer.notifyAcceptingConnectionFailed(e);
-		}
-	}
-
-	public void notifyCanConnect()
-	{
-		throw new UnsupportedOperationException("Not supported for server sockets.");
-	}
-
-	public void notifyCanRead()
-	{
-		throw new UnsupportedOperationException("Not supported for server sockets.");
-	}
-
-	public void notifyCanWrite()
-	{
-		throw new UnsupportedOperationException("Not supported for server sockets.");
-	}
-
-	private synchronized void socketDied()
-	{
-		if (!m_disconnectReported)
-		{
-			m_disconnectReported = true;
-			m_observer.notifyServerSocketDied();
+			m_observer.acceptFailed(e);
 		}
 	}
 
 	public void notifyWasCancelled()
 	{
-		socketDied();
-	}
-
-	public void close()
-	{
-		NIOUtils.closeKeyAndChannelSilently(m_key, m_channel);
-		socketDied();
+		close();
 	}
 
 	public long getTotalRefusedConnections()
@@ -158,46 +103,67 @@ class ServerSocketChannelResponder implements ChannelResponder, NIOServerSocket
 		return m_totalFailedConnections;
 	}
 
-	public boolean isOpen()
-	{
-		return m_channel.isOpen();
-	}
-
 	public long getTotalAcceptedConnections()
 	{
 		return m_totalAcceptedConnections;
 	}
-
-	public String getLocalAddress()
-	{
-		return m_localAddress;
-	}
-
-	public int getLocalPort()
-	{
-		return m_localPort;
-	}
-
-	@Override
-	public String toString()
-	{
-		return m_localAddress + ":" + m_localPort;
-	}
-
-	public NIOService getService()
-	{
-		return m_nioService;
-	}
-
+	
 	public void setConnectionAcceptor(ConnectionAcceptor connectionAcceptor)
 	{
 		m_connectionAcceptor = connectionAcceptor == null ? ConnectionAcceptor.DENY : connectionAcceptor;
 	}
 
+	@SuppressWarnings({"CallToPrintStackTrace"})
+	private void notifyObserverSocketDied(Exception exception)
+	{
+		if (m_observer == null) return;
+		try
+		{
+			m_observer.serverSocketDied(exception);
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+
+	}
 	public void listen(ServerSocketObserver observer)
 	{
-		if (m_observer != null) throw new IllegalArgumentException("There is already a listener attached to this socket");
-		m_observer = observer;
-		startAcceptIfReady();
+		if (observer == null) throw new NullPointerException();
+		markObserverSet();
+		getNIOService().queue(new BeginListenEvent(observer));
 	}
+
+	private class BeginListenEvent implements Runnable
+	{
+		private final ServerSocketObserver m_newObserver;
+
+		private BeginListenEvent(ServerSocketObserver socketObserver)
+		{
+			m_newObserver = socketObserver;
+		}
+
+		public void run()
+		{
+			m_observer =  m_newObserver;
+			if (!isOpen())
+			{
+				notifyObserverSocketDied(null);
+				return;
+			}
+			addInterest(SelectionKey.OP_ACCEPT);
+		}
+
+		@Override
+		public String toString()
+		{
+			return "BeginListen[" + m_newObserver + "]";
+		}
+	}
+
+	protected void shutdown(Exception e)
+	{
+		notifyObserverSocketDied(e);
+	}
+
 }

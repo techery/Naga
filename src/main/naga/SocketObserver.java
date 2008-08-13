@@ -17,18 +17,19 @@ public interface SocketObserver
 	 *
 	 * @param nioSocket the socket that completed its connect.
 	 */
-	void notifyConnect(NIOSocket nioSocket);
+	void connectionOpened(NIOSocket nioSocket);
 
 	/**
 	 * Sent when a connection is disconnected.
 	 * <p>
-	 * This may be sent even if a #notifyConnect
+	 * This may be sent even if a <code>connectionOpened(NIOSocket)</code>
 	 * wasn't ever called, since the connect itself may
 	 * fail.
 	 *
 	 * @param nioSocket the socket that was disconnected.
+	 * @param exception the exception that caused the connection to break, may be null.
 	 */
-	void notifyDisconnect(NIOSocket nioSocket);
+	void connectionBroken(NIOSocket nioSocket, Exception exception);
 
 	/**
 	 * Called when a packet is finished reading and contains
@@ -37,5 +38,5 @@ public interface SocketObserver
 	 * @param socket the socket we received a packet on.
 	 * @param packet the packet we received.
 	 */
-	void notifyReadPacket(NIOSocket socket, byte[] packet);
+	void packetReceived(NIOSocket socket, byte[] packet);
 }

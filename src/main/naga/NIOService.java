@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.*;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -24,8 +25,7 @@ public class NIOService
 {
 	/** The selector used by this service */
 	private final Selector m_selector;
-	/** A queue with sockets that are waiting to be registered with the selector */
-	private final Queue<ChannelResponder> m_socketsPendingRegistration;
+	private final Queue<Runnable> m_internalEventQueue;
 
 	/**
 	 * Create a new nio service.
@@ -36,7 +36,7 @@ public class NIOService
 	public NIOService() throws IOException
 	{
 		m_selector = Selector.open();
-		m_socketsPendingRegistration = new ConcurrentLinkedQueue<ChannelResponder>();
+		m_internalEventQueue = new ConcurrentLinkedQueue<Runnable>();
 	}
 
 	/**
@@ -47,14 +47,14 @@ public class NIOService
      * @throws ClosedSelectorException if the underlying selector is closed
 	 * (in this case, NIOService#isOpen will return false)
 	 */
-	public void selectBlocking() throws IOException
+	public synchronized void selectBlocking() throws IOException
 	{
-		registerChannelResponder();
+		executeQueue();
 		if (m_selector.select() > 0)
 		{
 			handleSelectedKeys();
 		}
-		registerChannelResponder();
+		executeQueue();
 	}
 
 	/**
@@ -65,14 +65,14 @@ public class NIOService
      * @throws ClosedSelectorException if the underlying selector is closed.
 	 * (in this case, NIOService#isOpen will return false)
 	 */
-	public void selectNonBlocking() throws IOException
+	public synchronized void selectNonBlocking() throws IOException
 	{
-		registerChannelResponder();
+		executeQueue();
 		if (m_selector.selectNow() > 0)
 		{
 			handleSelectedKeys();
 		}
-		registerChannelResponder();
+		executeQueue();
 	}
 
 	/**
@@ -86,14 +86,14 @@ public class NIOService
      * @throws ClosedSelectorException if the underlying selector is closed.
 	 * (in this case, NIOService#isOpen will return false)
 	 */
-	public void selectBlocking(long timeout) throws IOException
+	public synchronized void selectBlocking(long timeout) throws IOException
 	{
-		registerChannelResponder();
+		executeQueue();
 		if (m_selector.select(timeout) > 0)
 		{
 			handleSelectedKeys();
 		}
-		registerChannelResponder();
+		executeQueue();
 	}
 
 	/**
@@ -101,6 +101,8 @@ public class NIOService
 	 * a NIOSocket.
 	 * <p>
 	 * This roughly corresponds to creating a regular socket using new Socket(host, port).
+	 * <p>
+	 * This method is thread-safe.
 	 *
 	 * @param host the host we want to connect to.
 	 * @param port the port to use for the connection.
@@ -117,6 +119,8 @@ public class NIOService
 	 * a NIOSocket.
 	 * <p>
 	 * This roughly corresponds to creating a regular socket using new Socket(inetAddress, port).
+	 * <p>
+	 * This method is thread-safe.
 	 *
 	 * @param inetAddress the address we want to connect to.
 	 * @param port the port to use for the connection.
@@ -127,14 +131,17 @@ public class NIOService
 	{
 		SocketChannel channel = SocketChannel.open();
 		channel.configureBlocking(false);
-		channel.connect(new InetSocketAddress(inetAddress, port));
-		return registerSocketChannel(channel);
+		InetSocketAddress address = new InetSocketAddress(inetAddress, port);
+		channel.connect(address);
+		return registerSocketChannel(channel, address);
 	}
 
 	/**
 	 * Open a server socket on the given port.
 	 * <p>
 	 * This roughly corresponds to using new ServerSocket(port, backlog);
+	 * <p>
+	 * This method is thread-safe.
 	 *
 	 * @param port the port to open.
 	 * @param backlog the maximum connection backlog (i.e. connections pending accept)
@@ -150,6 +157,8 @@ public class NIOService
 	 * Open a server socket on the given port with the default connection backlog.
 	 * <p>
 	 * This roughly corresponds to using new ServerSocket(port);
+	 * <p>
+	 * This method is thread-safe.
 	 *
 	 * @param port the port to open.
 	 * @return a NIOServerSocket for asynchronous connection to the server socket.
@@ -162,6 +171,8 @@ public class NIOService
 
 	/**
 	 * Open a server socket on the address.
+	 * <p>
+	 * This method is thread-safe.
 	 *
 	 * @param address the address to open.
 	 * @param backlog the maximum connection backlog (i.e. connections pending accept)
@@ -174,8 +185,8 @@ public class NIOService
 		channel.socket().setReuseAddress(true);
 		channel.socket().bind(address, backlog);
 		channel.configureBlocking(false);
-		ServerSocketChannelResponder channelResponder = new ServerSocketChannelResponder(this, channel);
-		queueSelectorRegistration(channelResponder);
+		ServerSocketChannelResponder channelResponder = new ServerSocketChannelResponder(this, channel, address);
+		queue(new RegisterChannelEvent(channelResponder));
 		return channelResponder;
 	}
 
@@ -183,39 +194,33 @@ public class NIOService
 	/**
 	 * Internal method to mark a socket channel for pending registration
 	 * and create a NIOSocket wrapper around it.
+	 * <p>
+	 * This method is thread-safe.
 	 *
 	 * @param socketChannel the socket channel to wrap.
+	 * @param address the address for this socket.
 	 * @return the NIOSocket wrapper.
 	 * @throws IOException if configuring the channel fails, or the underlying selector is closed.
 	 */
-	NIOSocket registerSocketChannel(SocketChannel socketChannel) throws IOException
+	NIOSocket registerSocketChannel(SocketChannel socketChannel, InetSocketAddress address) throws IOException
 	{
 		socketChannel.configureBlocking(false);
-		SocketChannelResponder channelResponder = new SocketChannelResponder(socketChannel);
-		queueSelectorRegistration(channelResponder);
+		SocketChannelResponder channelResponder = new SocketChannelResponder(this, socketChannel, address);
+		queue(new RegisterChannelEvent(channelResponder));
 		return channelResponder;
 	}
 
 	/**
-	 * Internal method to register any pending channel responders.
+	 * Internal method to execute events on the internal event queue.
 	 * <p>
-	 * If registration fails then channel responder will be informed.
+	 * This method should only ever be called from the NIOService thread.
 	 */
-	private void registerChannelResponder()
+	private void executeQueue()
 	{
-		ChannelResponder channelResponder;
-		while ((channelResponder = m_socketsPendingRegistration.poll()) != null)
+		Runnable event;
+		while ((event = m_internalEventQueue.poll()) != null)
 		{
-			try
-			{
-				SelectionKey key = channelResponder.getChannel().register(m_selector, 0);
-				channelResponder.setKey(key);
-				key.attach(channelResponder);
-			}
-			catch (Exception e)
-			{
-				channelResponder.notifyWasCancelled();
-			}
+			event.run();
 		}
 	}
 
@@ -223,6 +228,8 @@ public class NIOService
 	 * Internal method to handle the key set generated by the internal Selector.
 	 * <p>
 	 * Will simply remove each entry and handle the key.
+	 * <p>
+	 * Called on the NIOService thread.
 	 */
 	private void handleSelectedKeys()
 	{
@@ -232,6 +239,8 @@ public class NIOService
 			// Retrieve the key.
 			SelectionKey key = it.next();
 
+			if (key.readyOps() == 0) throw new RuntimeException("Not ready!");
+			
 			// Remove it from the set so that it is not read again.
 			it.remove();
 
@@ -245,33 +254,35 @@ public class NIOService
 	 * Internal method to handle a SelectionKey that has changed.
 	 * <p>
 	 * Will delegate actual actions to the associated ChannelResponder.
-	 *
+	 * <p>
+	 * Called on the NIOService thread.
 	 * @param key the key to handle.
 	 */
 	private void handleKey(SelectionKey key)
 	{
+		ChannelResponder responder = (ChannelResponder) key.attachment();
 		try
 		{
 			if (key.isReadable())
 			{
-				((ChannelResponder) key.attachment()).notifyCanRead();
+				responder.socketReadyForRead();
 			}
 			if (key.isWritable())
 			{
-				((ChannelResponder) key.attachment()).notifyCanWrite();
+				responder.socketReadyForWrite();
 			}
 			if (key.isAcceptable())
 			{
-				((ChannelResponder) key.attachment()).notifyCanAccept();
+				responder.socketReadyForAccept();
 			}
 			if (key.isConnectable())
 			{
-				((ChannelResponder) key.attachment()).notifyCanConnect();
+				responder.socketReadyForConnect();
 			}
 		}
 		catch (CancelledKeyException e)
 		{
-			((ChannelResponder) key.attachment()).notifyWasCancelled();
+			responder.close(e);
 			// The key was cancelled and will automatically be removed next select.
 		}
 	}
@@ -282,52 +293,113 @@ public class NIOService
 	 * This will disconnect all sockets associated with this service.
 	 * <p>
 	 * It is not possible to restart the service once closed.
+	 * <p>
+	 * This method is thread-safe.
 	 */
 	public void close()
 	{
 		if (!isOpen()) return;
-
-		for (SelectionKey key : m_selector.keys())
-		{
-			try
-			{
-				NIOUtils.cancelKeySilently(key);
-				((ChannelResponder) key.attachment()).notifyWasCancelled();
-			}
-			catch (Exception e)
-			{
-				// Swallow exceptions.
-			}
-		}
-		try
-		{
-			m_selector.close();
-		}
-		catch (IOException e)
-		{
-			// Swallow exceptions.
-		}
+		queue(new ShutdownEvent());
 	}
 
-
-	/**
-	 * Queue a channel for later registration.
-	 *
-	 * @param channelResponder the responder to use.
-	 */
-	private void queueSelectorRegistration(ChannelResponder channelResponder)
-	{
-		m_socketsPendingRegistration.add(channelResponder);
-		m_selector.wakeup();
-	}
 
 	/**
 	 * Determine if this service is open.
+	 * <p>
+	 * This method is thread-safe.
 	 *
 	 * @return true if the service is open, false otherwise.
 	 */
 	public boolean isOpen()
 	{
 		return m_selector.isOpen();
+	}
+
+	/**
+	 * Queues an event on the NIOService queue.
+	 * <p>
+	 * This method is thread-safe, but should in general not be used by
+	 * other applications.
+	 *
+	 * @param event the event to run on the NIOService-thread.
+	 */
+	public void queue(Runnable event)
+	{
+		m_internalEventQueue.add(event);
+		m_selector.wakeup();
+	}
+
+	/**
+	 * Returns a copy of the internal event queue.
+	 *
+	 * @return a copy of the internal event queue.
+	 */
+	public Queue<Runnable> getQueue()
+	{
+		return new LinkedList<Runnable>(m_internalEventQueue);
+	}
+
+	/**
+	 * A registration class to let registrations occur on the NIOService thread.
+	 */
+	private class RegisterChannelEvent implements Runnable
+	{
+		private final ChannelResponder m_channelResponder;
+
+		private RegisterChannelEvent(ChannelResponder channelResponder)
+		{
+			m_channelResponder = channelResponder;
+		}
+
+		public void run()
+		{
+			try
+			{
+				SelectionKey key = m_channelResponder.getChannel().register(m_selector, 0);
+				m_channelResponder.setKey(key);
+				key.attach(m_channelResponder);
+			}
+			catch (Exception e)
+			{
+				m_channelResponder.close(e);
+			}
+		}
+
+		@Override
+		public String toString()
+		{
+			return "Register[" + m_channelResponder + "]";
+		}
+	}
+
+	/**
+	 * Shutdown class to let shutdown happen on the NIOService thread.
+	 */
+	private class ShutdownEvent implements Runnable
+	{
+		public void run()
+		{
+			if (!isOpen()) return;
+			for (SelectionKey key : m_selector.keys())
+			{
+				try
+				{
+					NIOUtils.cancelKeySilently(key);
+					((ChannelResponder) key.attachment()).close();
+				}
+				catch (Exception e)
+				{
+					// Swallow exceptions.
+				}
+			}
+			try
+			{
+				m_selector.close();
+			}
+			catch (IOException e)
+			{
+				// Swallow exceptions.
+			}
+		}
 	}
 }

@@ -3,16 +3,19 @@ package naga;
 import java.io.IOException;
 
 /**
+ * Class with null-implementations for all callbacks.
+ * 
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$
  */
 public class ServerSocketObserverAdapter implements ServerSocketObserver
 {
-	public void notifyAcceptingConnectionFailed(IOException exception)
+
+	public void acceptFailed(IOException exception)
 	{
 	}
 
-	public void notifyServerSocketDied()
+	public void serverSocketDied(Exception e)
 	{
 	}
 

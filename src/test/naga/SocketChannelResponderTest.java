@@ -8,6 +8,7 @@ import junit.framework.TestCase;
 import org.easymock.classextension.EasyMock;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
@@ -30,7 +31,7 @@ public class SocketChannelResponderTest extends TestCase
 		EasyMock.expect(m_channel.isConnected()).andReturn(true).once();
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
 		replay();
-		m_socketChannelResponder = new SocketChannelResponder(m_channel);
+		m_socketChannelResponder = new SocketChannelResponder(null, m_channel, new InetSocketAddress("localhost", 123));
 		m_socketChannelResponder.setKey(m_key);
 		m_socketChannelResponder.setMaxQueueSize(3);
 		assertEquals(0, m_socketChannelResponder.getBytesWritten());
@@ -58,7 +59,7 @@ public class SocketChannelResponderTest extends TestCase
 		EasyMock.expect(m_channel.isConnected()).andReturn(true).once();
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
 		replay();
-		m_socketChannelResponder = new SocketChannelResponder(m_channel);
+		m_socketChannelResponder = new SocketChannelResponder(null, m_channel, new InetSocketAddress("localhost", 123));
 		m_socketChannelResponder.setKey(m_key);
 		m_socketChannelResponder.setPacketWriter(writer);
 		assertEquals(0, m_socketChannelResponder.getBytesWritten());
@@ -92,7 +93,7 @@ public class SocketChannelResponderTest extends TestCase
 		replay();
 		EasyMock.replay(writer);
 
-		m_socketChannelResponder.notifyCanWrite();
+		m_socketChannelResponder.socketReadyForWrite();
 
 		assertEquals(0, m_socketChannelResponder.getBytesWritten());
 		assertEquals(0, m_socketChannelResponder.getWriteQueueSize());
@@ -112,7 +113,7 @@ public class SocketChannelResponderTest extends TestCase
 		replay();
 		EasyMock.replay(writer);
 
-		m_socketChannelResponder.notifyCanWrite();
+		m_socketChannelResponder.socketReadyForWrite();
 
 		assertEquals(3, m_socketChannelResponder.getBytesWritten());
 		assertEquals(0, m_socketChannelResponder.getWriteQueueSize());
@@ -131,7 +132,7 @@ public class SocketChannelResponderTest extends TestCase
 		replay();
 		EasyMock.replay(writer);
 
-		m_socketChannelResponder.notifyCanWrite();
+		m_socketChannelResponder.socketReadyForWrite();
 		assertEquals(4, m_socketChannelResponder.getBytesWritten());
 		assertEquals(0, m_socketChannelResponder.getWriteQueueSize());
 
@@ -146,7 +147,7 @@ public class SocketChannelResponderTest extends TestCase
 		replay();
 		EasyMock.replay(writer);
 
-		m_socketChannelResponder.notifyCanWrite();
+		m_socketChannelResponder.socketReadyForWrite();
 
 		EasyMock.verify(writer);
 		verify();
@@ -173,52 +174,63 @@ public class SocketChannelResponderTest extends TestCase
 
 	public void testFinishConnectThrowsException() throws IOException
 	{
+		NIOService nioService = new NIOService();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_CONNECT)).andReturn(m_key).once();
 		m_key.cancel();
 		EasyMock.expectLastCall().once();
 		replay();
-		m_socketChannelResponder = new SocketChannelResponder(SocketChannel.open());
+		m_socketChannelResponder = new SocketChannelResponder(nioService, SocketChannel.open(), new InetSocketAddress("localhost", 123));
 		m_socketChannelResponder.setKey(m_key);
-		m_socketChannelResponder.notifyCanConnect();
+		m_socketChannelResponder.socketReadyForConnect();
+		assertEquals(true, m_socketChannelResponder.isOpen());
+		nioService.selectNonBlocking();
+		assertEquals(false, m_socketChannelResponder.isOpen());
 		verify();
-		reset();
 	}
 
 	public void testCanReadThrowsException() throws IOException
 	{
+		NIOService nioService = new NIOService();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_CONNECT)).andReturn(m_key).once();
 		m_key.cancel();
 		EasyMock.expectLastCall().once();
 		replay();
-		m_socketChannelResponder = new SocketChannelResponder(SocketChannel.open());
+		m_socketChannelResponder = new SocketChannelResponder(nioService, SocketChannel.open(), new InetSocketAddress("localhost", 123));
 		m_socketChannelResponder.setKey(m_key);
-		m_socketChannelResponder.notifyCanRead();
-		verify();
+		m_socketChannelResponder.socketReadyForRead();
+		assertEquals(true, m_socketChannelResponder.isOpen());
+		nioService.selectNonBlocking();
 		assertEquals(false, m_socketChannelResponder.isOpen());
+		verify();
 	}
 
 	public void testCanWriteThrowsException() throws IOException
 	{
+		NIOService nioService = new NIOService();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_CONNECT)).andReturn(m_key).times(2);
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE)).andReturn(m_key).once();
 		m_key.cancel();
 		EasyMock.expectLastCall().once();
 		replay();
-		m_socketChannelResponder = new SocketChannelResponder(SocketChannel.open());
+		m_socketChannelResponder = new SocketChannelResponder(nioService, SocketChannel.open(), new InetSocketAddress("localhost", 123));
 		m_socketChannelResponder.setKey(m_key);
 		m_socketChannelResponder.write(new byte[] { 0 });
-		m_socketChannelResponder.notifyCanWrite();
-		verify();
+		m_socketChannelResponder.socketReadyForWrite();
+		assertEquals(true, m_socketChannelResponder.isOpen());
+		nioService.selectNonBlocking();
 		assertEquals(false, m_socketChannelResponder.isOpen());
+		verify();
 	}
 
 	public void testSetKey() throws Exception
 	{
+		NIOService nioService = new NIOService();
 		m_key.cancel();
 		EasyMock.expectLastCall().once();
 		replay();
-		m_socketChannelResponder = new SocketChannelResponder(null);
+		m_socketChannelResponder = new SocketChannelResponder(nioService, null, new InetSocketAddress("localhost", 123));
 		m_socketChannelResponder.close();
+		nioService.selectNonBlocking();
 		m_socketChannelResponder.setKey(m_key);
 		verify();
 		assertEquals(false, m_socketChannelResponder.isOpen());
