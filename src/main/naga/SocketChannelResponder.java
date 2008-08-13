@@ -60,6 +60,7 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 
 	public boolean write(byte[] packet)
 	{
+		if (packet.length == 0) return true;
 		long currentQueueSize = m_bytesInQueue.addAndGet(packet.length);
 		if (m_maxQueueSize > 0 && currentQueueSize > m_maxQueueSize)
 		{
@@ -205,11 +206,6 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 	public long getWriteQueueSize()
 	{
 		return m_bytesInQueue.get();
-	}
-
-	public boolean isWriting()
-	{
-		return !m_packetWriter.isEmpty() || m_packetQueue.peek() != null;
 	}
 
 	public String toString()

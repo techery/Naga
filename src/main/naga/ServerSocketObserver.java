@@ -3,6 +3,17 @@ package naga;
 import java.io.IOException;
 
 /**
+ * Implemented by an observer to a server socket.
+ * <p>
+ * A server socket observer is responsible for handling
+ * incoming connections by implementing a callback
+ * to properly assign a SocketObserver to the new connections.
+ * <p>
+ * All callbacks will be run on the NIOService-thread,
+ * so callbacks should try to return as quickly as possible
+ * since the callback blocks communication on all sockets
+ * of the service.
+ * 
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$
  */

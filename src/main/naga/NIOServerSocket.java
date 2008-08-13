@@ -1,6 +1,12 @@
 package naga;
 
 /**
+ * Interface for the NIOServerSocket, which is
+ * an asynchronous facade to an underlying ServerSocket.
+ * <p>
+ * The NIOServerSocket executes callbacks to a ServerSocket observer
+ * to react to new connections and other events.
+ *
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$
  */
@@ -64,7 +70,7 @@ public interface NIOServerSocket extends NIOAbstractSocket
 	 * A connection acceptor determines if a connection should be
 	 * disconnected or not <em>after</em> the initial accept is done.
 	 * <p>
-	 * See <code>ConnectionAcceptor</code>
+	 * For more information, see the documentation for <code>naga.ConnectionAcceptor</code>.
 	 * <p>
 	 * This method is thread-safe.
 	 *

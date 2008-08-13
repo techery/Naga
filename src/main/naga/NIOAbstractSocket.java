@@ -3,6 +3,8 @@ package naga;
 import java.net.InetSocketAddress;
 
 /**
+ * An interface describing methods common to both NIOSocket and NIOServerSocket.
+ * 
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$
  */

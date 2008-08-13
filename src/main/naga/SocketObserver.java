@@ -3,6 +3,11 @@ package naga;
 /**
  * This interface contains the callbacks used by a NIOSocket
  * to inform its observer of events.
+ * <p>
+ * All callbacks will be run on the NIOService-thread,
+ * so callbacks should try to return as quickly as possible
+ * since the callback blocks communication on all sockets
+ * of the service.
  *
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$

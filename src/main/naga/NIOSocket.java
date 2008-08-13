@@ -1,6 +1,13 @@
 package naga;
 
 /**
+ * Interface for the NIOSocket, which is
+ * an asynchronous facade to an underlying Socket.
+ * <p>
+ * The NIOSocket executes callbacks to a Socket observer
+ * to react to incoming packets and other events.
+ *
+ *
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$
  */
@@ -23,16 +30,24 @@ public interface NIOSocket extends NIOAbstractSocket
 	boolean write(byte[] packet);
 
 	/**
+	 * Return the total number of bytes read on this socket since
+	 * it was opened.
+	 *
 	 * @return the total number of bytes read on this socket.
 	 */
 	long getBytesRead();
 
 	/**
+	 * Return the total number of bytes written on this socket
+	 * since it was opened.
+	 *
 	 * @return the total number of bytes written on this socket.
 	 */
 	long getBytesWritten();
 
 	/**
+	 * Return the time this socket has been open.
+	 *
 	 * @return the time this socket has been open in ms.
 	 */
 	long getTimeOpen();
@@ -49,9 +64,9 @@ public interface NIOSocket extends NIOAbstractSocket
 	 */
 	long getWriteQueueSize();
 
-	boolean isWriting();
-
 	/**
+	 * The current maximum queue size in bytes.
+	 *
 	 * @return the current maximum queue size.
 	 */
 	int getMaxQueueSize();
@@ -93,6 +108,8 @@ public interface NIOSocket extends NIOAbstractSocket
 	/**
 	 * Causes the socket to close after writing the current entries in the queue
 	 * (consequent entries will be thrown away).
+	 * <p>
+	 * Also see <code>close()</code> if you want to immediately close the socket.
 	 */
 	void closeAfterWrite();
 }

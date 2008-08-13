@@ -51,8 +51,8 @@ public interface ConnectionAcceptor
 	 * For this reason it is recommended that this method should return fairly quickly
 	 * (e.g. don't make reverse ip lookups or similar - potentially very slow - calls).
 	 *
-	 * @param address
+	 * @param inetSocketAddress the adress the connection came from.
 	 * @return true to accept, false to refuse.
 	 */
-	boolean acceptConnection(InetSocketAddress address);
+	boolean acceptConnection(InetSocketAddress inetSocketAddress);
 }
