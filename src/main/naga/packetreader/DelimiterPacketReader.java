@@ -92,7 +92,7 @@ public class DelimiterPacketReader implements PacketReader
 	 */
 	public ByteBuffer getBuffer() throws ProtocolViolationException
 	{
-		if (m_buffer != null && m_buffer.length > m_maxPacketSize)
+		if (m_maxPacketSize > -1 && m_buffer != null && m_buffer.length > m_maxPacketSize)
 		{
 			throw new ProtocolViolationException("Packet size exceeds " + m_maxPacketSize);
 		}
