@@ -344,5 +344,8 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 		}
 	}
 
-
+	public Socket socket()
+	{
+		return getChannel().socket();
+	}
 }

@@ -175,7 +175,7 @@ public class SocketChannelResponderTest extends TestCase
 	public void testFinishConnectThrowsException() throws IOException
 	{
 		NIOService nioService = new NIOService();
-		EasyMock.expect(m_key.interestOps(SelectionKey.OP_CONNECT)).andReturn(m_key).once();
+		EasyMock.expect(m_key.interestOps(SelectionKey.OP_CONNECT)).andReturn(m_key).times(2);
 		m_key.cancel();
 		EasyMock.expectLastCall().once();
 		replay();
@@ -191,7 +191,7 @@ public class SocketChannelResponderTest extends TestCase
 	public void testCanReadThrowsException() throws IOException
 	{
 		NIOService nioService = new NIOService();
-		EasyMock.expect(m_key.interestOps(SelectionKey.OP_CONNECT)).andReturn(m_key).once();
+		EasyMock.expect(m_key.interestOps(SelectionKey.OP_CONNECT)).andReturn(m_key).times(2);
 		m_key.cancel();
 		EasyMock.expectLastCall().once();
 		replay();
@@ -207,8 +207,7 @@ public class SocketChannelResponderTest extends TestCase
 	public void testCanWriteThrowsException() throws IOException
 	{
 		NIOService nioService = new NIOService();
-		EasyMock.expect(m_key.interestOps(SelectionKey.OP_CONNECT)).andReturn(m_key).times(2);
-		EasyMock.expect(m_key.interestOps(SelectionKey.OP_CONNECT | SelectionKey.OP_WRITE)).andReturn(m_key).once();
+		EasyMock.expect(m_key.interestOps(SelectionKey.OP_CONNECT)).andReturn(m_key).times(4);
 		m_key.cancel();
 		EasyMock.expectLastCall().once();
 		replay();

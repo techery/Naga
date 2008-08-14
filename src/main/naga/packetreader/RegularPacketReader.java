@@ -42,6 +42,13 @@ public class RegularPacketReader implements PacketReader
 		m_content = null;
 	}
 
+	/**
+	 * Return the next buffer to use.
+	 *
+	 * @return the next buffer to use.
+	 * @throws ProtocolViolationException if the header was read and the size of the content is
+	 * larger or equal to Integer.MAX_VALUE.
+	 */
 	public ByteBuffer getBuffer() throws ProtocolViolationException
 	{
 		if (m_header.hasRemaining()) return m_header;
@@ -49,6 +56,14 @@ public class RegularPacketReader implements PacketReader
 		return m_content;
 	}
 
+	/**
+	 * Tries to read and parse the header if possible.
+	 * <P>
+	 * Makes sure that the content buffer is initialized if the header has finished reading.
+	 *
+	 * @throws ProtocolViolationException if the header indicates that the size of the
+	 * content is equal to or larger than Integer.MAX_VALUE.
+	 */
 	private void prepareContentBuffer() throws ProtocolViolationException
 	{
 		if (m_contentSize < 0 && !m_header.hasRemaining())
@@ -62,6 +77,12 @@ public class RegularPacketReader implements PacketReader
 		}
 	}
 
+	/**
+	 * Return the next packet or null if no complete packet can be constructed.
+	 *
+	 * @return the next packet available or null if none is available.
+	 * @throws ProtocolViolationException if the size of the packet is larger or equal to Integer.MAX_VALUE.
+	 */
 	public byte[] getNextPacket() throws ProtocolViolationException
 	{
 		prepareContentBuffer();

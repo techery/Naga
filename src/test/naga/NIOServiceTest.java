@@ -59,7 +59,7 @@ public class NIOServiceTest extends TestCase
 		EasyMock.verify(socketObserverClient);
 		EasyMock.verify(socketObserverServer);
 		EasyMock.verify(acceptor);
-		assertEquals(socket.getAddress().getAddress(), serverSocket.getAddress().getAddress());
+		assertEquals(socket.getPort(), serverSocket.socket().getLocalPort());
 		assertEquals(1, serverSocket.getTotalConnections());
 		assertEquals(1, serverSocket.getTotalAcceptedConnections());
 	}
@@ -76,7 +76,8 @@ public class NIOServiceTest extends TestCase
 
 		SocketObserver socketOwnerClientSide = EasyMock.createMock(SocketObserver.class);
 		socketOwnerClientSide.connectionOpened((NIOSocket) EasyMock.anyObject());
-		socketOwnerClientSide.connectionBroken((NIOSocket) EasyMock.anyObject(), null);
+		EasyMock.expectLastCall().once();
+		socketOwnerClientSide.connectionBroken((NIOSocket) EasyMock.anyObject(), (Exception) EasyMock.anyObject());
 		EasyMock.expectLastCall().once();
 		EasyMock.replay(socketOwnerClientSide);
 

@@ -2,6 +2,7 @@ package naga;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -166,4 +167,8 @@ class ServerSocketChannelResponder extends ChannelResponder implements NIOServer
 		notifyObserverSocketDied(e);
 	}
 
+	public ServerSocket socket()
+	{
+		return getChannel().socket();
+	}
 }

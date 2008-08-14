@@ -15,6 +15,11 @@ import java.nio.ByteBuffer;
  * </code>
  * <p>
  * Note that the maximum size for 4 bytes is a signed 32 bit int, not unsigned.
+ * <p>
+ * The packet writer will not validate outgoing packets, so make sure that
+ * the packet content size will fit in the header. I.e. make sure that if you have
+ * a 1 byte header, you do not send packets larger than 255 bytes, if two bytes, larger than 65535 and
+ * so on.
  *
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$

@@ -1,5 +1,7 @@
 package naga;
 
+import java.net.ServerSocket;
+
 /**
  * Interface for the NIOServerSocket, which is
  * an asynchronous facade to an underlying ServerSocket.
@@ -79,4 +81,14 @@ public interface NIOServerSocket extends NIOAbstractSocket
 	 * ConnectorAcceptor.DENY.
 	 */
 	void setConnectionAcceptor(ConnectionAcceptor acceptor);
+
+	/**
+	 * Allows access to the underlying server socket.
+	 * <p>
+	 * <em>Note calling close and similar functions on this socket
+	 * will put the NIOServerSocket in an undefined state</em>
+	 *
+	 * @return return the underlying server socket.
+	 */
+	ServerSocket socket();
 }
