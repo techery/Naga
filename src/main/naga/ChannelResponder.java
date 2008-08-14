@@ -42,7 +42,7 @@ abstract class ChannelResponder implements NIOAbstractSocket
 		m_interestOps = 0;
 		m_observerSet = false;
 		m_address = address;
-		m_ip = address.getHostName();
+		m_ip = address.getAddress().getHostAddress();
 		m_port = address.getPort();
 	}
 
@@ -121,7 +121,7 @@ abstract class ChannelResponder implements NIOAbstractSocket
 	/**
 	 * Get the channel used by this responder.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return the channel used by the responder.
 	 */
@@ -155,7 +155,7 @@ abstract class ChannelResponder implements NIOAbstractSocket
 	/**
 	 * Returns the selection key or null if the key is not set.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return the selection key or nul if the responder is not yet registered.
 	 */
@@ -199,7 +199,7 @@ abstract class ChannelResponder implements NIOAbstractSocket
 	 * Synchronizes the desired interest ops with the key interests ops,
 	 * <em>if</em> the key is initialized.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 */
 	private void synchronizeKeyInterestOps()
 	{
@@ -226,7 +226,7 @@ abstract class ChannelResponder implements NIOAbstractSocket
 	/**
 	 * Deleted an interest on a key.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @param interest the interest to delete.
 	 */
@@ -239,7 +239,7 @@ abstract class ChannelResponder implements NIOAbstractSocket
 	/**
 	 * Add an interest to the key, or change the currently pending interest.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @param interest the interest to add.
 	 */
@@ -251,7 +251,8 @@ abstract class ChannelResponder implements NIOAbstractSocket
 
 
 	/**
-	 * This method is thread-safe.
+	 * Returns a string on the format [ip]:[port]
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return a string on the format IP:port.
 	 */

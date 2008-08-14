@@ -1,5 +1,7 @@
 package naga;
 
+import naga.exception.ProtocolViolationException;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -26,8 +28,10 @@ public interface PacketReader
 	 * call to <code>PacketReader#getNextPacket()</code> is made.
 	 *
 	 * @return the byte buffer to use.
+	 * @throws ProtocolViolationException if a protocol violation was detected when
+	 * reading preparing the buffer.
 	 */
-	ByteBuffer getBuffer();
+	ByteBuffer getBuffer() throws ProtocolViolationException;
 
 	/**
 	 * Return the next packet constructed from the data read in the buffers.
@@ -38,6 +42,8 @@ public interface PacketReader
 	 *
 	 * @return a byte array containing the data of a packet, or null if not packet can be created
 	 * yet from the data read.
+	 * @throws ProtocolViolationException if a protocol violation was detected when
+	 * parsing the next packet.
 	 */
-	byte[] getNextPacket();
+	byte[] getNextPacket() throws ProtocolViolationException;
 }

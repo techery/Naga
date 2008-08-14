@@ -102,7 +102,7 @@ public class NIOService
 	 * <p>
 	 * This roughly corresponds to creating a regular socket using new Socket(host, port).
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @param host the host we want to connect to.
 	 * @param port the port to use for the connection.
@@ -120,7 +120,7 @@ public class NIOService
 	 * <p>
 	 * This roughly corresponds to creating a regular socket using new Socket(inetAddress, port).
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @param inetAddress the address we want to connect to.
 	 * @param port the port to use for the connection.
@@ -141,7 +141,7 @@ public class NIOService
 	 * <p>
 	 * This roughly corresponds to using new ServerSocket(port, backlog);
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @param port the port to open.
 	 * @param backlog the maximum connection backlog (i.e. connections pending accept)
@@ -158,7 +158,7 @@ public class NIOService
 	 * <p>
 	 * This roughly corresponds to using new ServerSocket(port);
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @param port the port to open.
 	 * @return a NIOServerSocket for asynchronous connection to the server socket.
@@ -172,7 +172,7 @@ public class NIOService
 	/**
 	 * Open a server socket on the address.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @param address the address to open.
 	 * @param backlog the maximum connection backlog (i.e. connections pending accept)
@@ -195,7 +195,7 @@ public class NIOService
 	 * Internal method to mark a socket channel for pending registration
 	 * and create a NIOSocket wrapper around it.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @param socketChannel the socket channel to wrap.
 	 * @param address the address for this socket.
@@ -294,7 +294,7 @@ public class NIOService
 	 * <p>
 	 * It is not possible to restart the service once closed.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 */
 	public void close()
 	{
@@ -306,7 +306,7 @@ public class NIOService
 	/**
 	 * Determine if this service is open.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return true if the service is open, false otherwise.
 	 */

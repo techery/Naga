@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 class SocketChannelResponder extends ChannelResponder implements NIOSocket
 {
 	private final static byte[] CLOSE_PACKET = new byte[0];
+	private final static IOException CLOSE_EXCEPTION = new IOException("CLOSE");
 	private int m_bytesRead;
 	private int m_bytesWritten;
 	private int m_maxQueueSize;
@@ -115,7 +116,7 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 			// Retrieve next packet from the queue.
 			byte[] nextPacket = m_packetQueue.poll();
 
-			if (nextPacket == CLOSE_PACKET) throw new IOException("CLOSE");
+			if (nextPacket == CLOSE_PACKET) throw CLOSE_EXCEPTION;
 
 			if (nextPacket != null)
 			{
@@ -155,7 +156,9 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 		}
 		catch (Exception e)
 		{
-			close(e);
+			// Do not close with an exception if this was triggered by
+			// "close after write".
+			close(e == CLOSE_EXCEPTION ? null : e);
 		}
 	}
 	

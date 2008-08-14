@@ -13,12 +13,14 @@ public interface NIOAbstractSocket
 	/**
 	 * Closes this socket (the actual disconnect will occur on the NIOService thread)
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 */
 	void close();
 
 	/**
 	 * Returns the InetSocketAddress for this socket.
+	 * <p>
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return the InetSocketAddress this socket connects to.
 	 */
@@ -27,7 +29,7 @@ public interface NIOAbstractSocket
 	/**
 	 * Returns the current state of this socket.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 * 
 	 * @return true if the connection is socket is open, false if closed.
 	 */
@@ -35,6 +37,8 @@ public interface NIOAbstractSocket
 
 	/**
 	 * Reports the IP used by this socket.
+	 * <p>
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return the IP of this socket.
 	 */
@@ -42,6 +46,8 @@ public interface NIOAbstractSocket
 
 	/**
 	 * Returns the port in use by this socket.
+	 * <p>
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return the port of this socket.
 	 */

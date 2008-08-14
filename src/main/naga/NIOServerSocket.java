@@ -17,7 +17,7 @@ public interface NIOServerSocket extends NIOAbstractSocket
 	 * Returns the total number of connections made on this socket since
 	 * it opened.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return the total number of connections made on this server socket.
 	 */
@@ -27,7 +27,7 @@ public interface NIOServerSocket extends NIOAbstractSocket
 	 * Returns the total number of refused connections on this socket since
 	 * it opened.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return the total number of refused connections on this server socket.
 	 */
@@ -37,7 +37,8 @@ public interface NIOServerSocket extends NIOAbstractSocket
 	 * Returns the total number of accepted connections on this socket since
 	 * it opened.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
+	 *
 	 * @return the total number of accepted connections on this server socket.
 	 */
 	long getTotalAcceptedConnections();
@@ -46,7 +47,7 @@ public interface NIOServerSocket extends NIOAbstractSocket
 	 * Returns the total number of failed connections on this socket since
 	 * it opened.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return the total number of failed connections on this server socket.
 	 */
@@ -56,7 +57,7 @@ public interface NIOServerSocket extends NIOAbstractSocket
 	 * Associates a server socket observer with this server socket and
 	 * starts accepting connections.
 	 * <p>
-	 * This method is thread-safe, but may only be called once.
+	 * <em>This method is thread-safe, but may only be called once.</em>
 	 *
 	 * @param observer the observer to receive callbacks from this socket.
 	 * @throws NullPointerException if the observer given is null.
@@ -72,7 +73,7 @@ public interface NIOServerSocket extends NIOAbstractSocket
 	 * <p>
 	 * For more information, see the documentation for <code>naga.ConnectionAcceptor</code>.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @param acceptor the acceptor to use, or null to default to
 	 * ConnectorAcceptor.DENY.

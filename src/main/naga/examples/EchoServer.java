@@ -1,16 +1,24 @@
 package naga.examples;
 
 import naga.*;
-import naga.packetreader.AsciiLinePacketReader;
 
 import java.io.IOException;
 
 /**
+ * Creates a very simple echo server.
+ * <p>
+ * Run using java naga.examples.EchoServer [port]
+ *
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$
  */
 public class EchoServer
 {
+	/**
+	 * Runs the echo server.
+	 *
+	 * @param args command line arguments, assumed to be a 1 length string containing a port.
+	 */
 	public static void main(String... args)
 	{
 		int port = Integer.parseInt(args[0]);
@@ -24,23 +32,11 @@ public class EchoServer
 				public void newConnection(NIOSocket nioSocket)
 				{
 					System.out.println("Client " + nioSocket.getIp() + " connected.");
-					nioSocket.write("Welcome to the Echo Server\n".getBytes());
-					// Set a string reader for incoming packets.
-					nioSocket.setPacketReader(new AsciiLinePacketReader());
 					nioSocket.listen(new SocketObserverAdapter()
 					{
 						public void packetReceived(NIOSocket socket, byte[] packet)
 						{
-							String string = new String(packet).trim();
-							System.out.println("Echo: '" + string + "' to " + socket.getIp());
-							if (string.equals("~BYE"))
-							{
-								socket.write(("Goodbye " + socket.getIp() + "\n").getBytes());
-								socket.closeAfterWrite();
-								return;
-							}
-							socket.write(string.getBytes());
-							socket.write("\n".getBytes());
+							socket.write(packet);
 						}
 
 						public void connectionBroken(NIOSocket nioSocket, Exception exception)

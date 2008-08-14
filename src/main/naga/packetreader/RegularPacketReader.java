@@ -2,6 +2,7 @@ package naga.packetreader;
 
 import naga.NIOUtils;
 import naga.PacketReader;
+import naga.exception.ProtocolViolationException;
 
 import java.nio.ByteBuffer;
 
@@ -41,27 +42,27 @@ public class RegularPacketReader implements PacketReader
 		m_content = null;
 	}
 
-	public ByteBuffer getBuffer()
+	public ByteBuffer getBuffer() throws ProtocolViolationException
 	{
 		if (m_header.hasRemaining()) return m_header;
 		prepareContentBuffer();
 		return m_content;
 	}
 
-	private void prepareContentBuffer()
+	private void prepareContentBuffer() throws ProtocolViolationException
 	{
 		if (m_contentSize < 0 && !m_header.hasRemaining())
 		{
 			m_contentSize = NIOUtils.getPacketSizeFromByteBuffer(m_header, m_bigEndian);
 			if (m_contentSize < 0 || m_contentSize >= Integer.MAX_VALUE)
 			{
-				throw new IllegalArgumentException("Content size out of range, was: " + m_contentSize);
+				throw new ProtocolViolationException("Content size out of range, was: " + m_contentSize);
 			}
 			m_content = ByteBuffer.allocate(m_contentSize);
 		}
 	}
 
-	public byte[] getNextPacket()
+	public byte[] getNextPacket() throws ProtocolViolationException
 	{
 		prepareContentBuffer();
 		if (m_contentSize < 0 || m_content.hasRemaining())

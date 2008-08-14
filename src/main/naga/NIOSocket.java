@@ -32,6 +32,8 @@ public interface NIOSocket extends NIOAbstractSocket
 	/**
 	 * Return the total number of bytes read on this socket since
 	 * it was opened.
+	 * <p>
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return the total number of bytes read on this socket.
 	 */
@@ -40,6 +42,8 @@ public interface NIOSocket extends NIOAbstractSocket
 	/**
 	 * Return the total number of bytes written on this socket
 	 * since it was opened.
+	 * <p>
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return the total number of bytes written on this socket.
 	 */
@@ -47,6 +51,8 @@ public interface NIOSocket extends NIOAbstractSocket
 
 	/**
 	 * Return the time this socket has been open.
+	 * <p>
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return the time this socket has been open in ms.
 	 */
@@ -58,6 +64,8 @@ public interface NIOSocket extends NIOAbstractSocket
 	 * will be refused or not.
 	 * <p>
 	 * However, this number does not include the packet currently waiting to be written.
+	 * <p>
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return the total size of the packets waiting to be dispatched, exluding the currently
 	 * dispatching packet.
@@ -66,6 +74,8 @@ public interface NIOSocket extends NIOAbstractSocket
 
 	/**
 	 * The current maximum queue size in bytes.
+	 * <p>
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @return the current maximum queue size.
 	 */
@@ -74,6 +84,8 @@ public interface NIOSocket extends NIOAbstractSocket
 	/**
 	 * Sets the maximum number of bytes allowed in the queue for this socket. If this
 	 * number is less than 1, the queue is unbounded.
+	 * <p>
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @param maxQueueSize the new max queue size. A value less than 1 is an unbounded queue.
 	 */
@@ -99,8 +111,11 @@ public interface NIOSocket extends NIOAbstractSocket
 	 * The socket observer will receive connects, disconnects and packets.
 	 * If the socket was opened or disconnected before the observer was attached,
 	 * the socket observer will still receive those callbacks.
+	 * <p>
+	 * <em>This method is thread-safe, but may only be called once.</em>
 	 *
 	 * @param socketObserver the observer to receive packets and be notified of connects/disconnects.
+	 * @throws IllegalStateException if the method already has been called.
 	 */
 	void listen(SocketObserver socketObserver);
 
@@ -110,6 +125,8 @@ public interface NIOSocket extends NIOAbstractSocket
 	 * (consequent entries will be thrown away).
 	 * <p>
 	 * Also see <code>close()</code> if you want to immediately close the socket.
+	 * <p>
+	 * <em>This method is thread-safe.</em>
 	 */
 	void closeAfterWrite();
 }

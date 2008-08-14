@@ -1,11 +1,16 @@
 package naga.packetreader;
 
 import naga.PacketReader;
+import naga.exception.ProtocolViolationException;
 
 import java.nio.ByteBuffer;
 
 /**
  * Class to read a byte stream delimited by a byte marking the end of a packet.
+ * <p>
+ * Since packets read with delimiters may potentially grow unbounded, you can also supply
+ * a maximum buffer size to prevent an attacker from causing an out of memory
+ * by continously sending data without the delimiter.
  * <p>
  * The delimiter will never appear in the packet itself.
  *
@@ -14,40 +19,87 @@ import java.nio.ByteBuffer;
  */
 public class DelimiterPacketReader implements PacketReader
 {
+	public final static int DEFAULT_READ_BUFFER_SIZE = 256;
 	private ByteBuffer m_currentBuffer;
+	private volatile int m_maxPacketSize;
 	private byte[] m_buffer;
 	private byte m_delimiter;
 
 	/**
-	 * Create a new reader with the default buffer size.
+	 * Create a new reader with the default min buffer size and unlimited max buffer size.
 	 *
 	 * @param delimiter the byte delimiter to use.
 	 */
 	public DelimiterPacketReader(byte delimiter)
 	{
-		this(80, delimiter);
+		this(delimiter, DEFAULT_READ_BUFFER_SIZE, -1);
 	}
 
 	/**
-	 * Create a new reader with the given buffer size, delimited
-	 * by the given byte.
+	 * Create a new reader with the given min and max buffer size
+	 * delimited by the given byte.
 	 *
-	 * @param bufferSize the buffer size to use for the underlying ByteBuffer.
 	 * @param delimiter the byte value of the delimiter.
+	 * @param readBufferSize the size of the read buffer (i.e. how many
+	 * bytes are read in a single pass) - this only has effect on read
+	 * efficiency and memory requirements.
+	 * @param maxPacketSize the maximum number of bytes read before throwing a
+	 * ProtocolException. -1 means the packet has no size limit.
+	 * @throws IllegalArgumentException if maxPacketSize < readBufferSize or if
+	 * readBufferSize < 1.
 	 */
-	public DelimiterPacketReader(int bufferSize, byte delimiter)
+	public DelimiterPacketReader(byte delimiter, int readBufferSize, int maxPacketSize)
 	{
-		m_currentBuffer = ByteBuffer.allocate(bufferSize);
+		if (readBufferSize < 1) throw new IllegalArgumentException("Min buffer must at least be 1 byte.");
+		if (maxPacketSize > -1 && readBufferSize > maxPacketSize)
+		{
+			throw new IllegalArgumentException("Read buffer size be larger than max packet size.");
+		}
+		m_currentBuffer = ByteBuffer.allocate(readBufferSize);
 		m_buffer = null;
 		m_delimiter = delimiter;
+		m_maxPacketSize = maxPacketSize;
 	}
 
-	public ByteBuffer getBuffer()
+	/**
+	 * Get the current maximum buffer size.
+	 *
+	 * @return the current maximum size.
+	 */
+	public int getMaxPacketSize()
 	{
+		return m_maxPacketSize;
+	}
+
+	/**
+	 * Set the new maximum packet size.
+	 * <p>
+	 * This method is thread-safe, but will not
+	 * affect reads in progress.
+	 *
+	 * @param maxPacketSize the new maximum packet size.
+	 */
+	public void setMaxPacketSize(int maxPacketSize)
+	{
+		m_maxPacketSize = maxPacketSize;
+	}
+
+	/**
+	 * Return the currently used byte buffer.
+	 *
+	 * @return the byte buffer to use.
+	 * @throws ProtocolViolationException if the internal buffer already exceeds the maximum size.
+	 */
+	public ByteBuffer getBuffer() throws ProtocolViolationException
+	{
+		if (m_buffer != null && m_buffer.length > m_maxPacketSize)
+		{
+			throw new ProtocolViolationException("Packet size exceeds " + m_maxPacketSize);
+		}
 		return m_currentBuffer;
 	}
 
-	public byte[] getNextPacket()
+	public byte[] getNextPacket() throws ProtocolViolationException
 	{
 		if (m_currentBuffer.position() > 0)
 		{
