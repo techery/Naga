@@ -207,6 +207,7 @@ abstract class ChannelResponder implements NIOAbstractSocket
 		{
 			try
 			{
+				int oldOps = m_key.interestOps();
 				if ((m_interestOps & SelectionKey.OP_CONNECT) != 0)
 				{
 					m_key.interestOps(SelectionKey.OP_CONNECT);
@@ -214,6 +215,10 @@ abstract class ChannelResponder implements NIOAbstractSocket
 				else
 				{
 					m_key.interestOps(m_interestOps);
+				}
+				if (m_key.interestOps() != oldOps)
+				{
+					m_service.wakeup();
 				}
 			}
 			catch (CancelledKeyException e)
@@ -301,6 +306,8 @@ abstract class ChannelResponder implements NIOAbstractSocket
 			}
 		}
 	}
+
+
 
 
 }

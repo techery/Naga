@@ -326,7 +326,7 @@ public class NIOService
 	public void queue(Runnable event)
 	{
 		m_internalEventQueue.add(event);
-		m_selector.wakeup();
+		wakeup();
 	}
 
 	/**
@@ -337,6 +337,14 @@ public class NIOService
 	public Queue<Runnable> getQueue()
 	{
 		return new LinkedList<Runnable>(m_internalEventQueue);
+	}
+
+	/**
+	 * Runs wakeup on the selector, causing any block to be released.
+	 */
+	void wakeup()
+	{
+		m_selector.wakeup();
 	}
 
 	/**

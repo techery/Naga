@@ -29,6 +29,7 @@ public class SocketChannelResponderTest extends TestCase
 	public void testWriteExceedingMax()
 	{
 		EasyMock.expect(m_channel.isConnected()).andReturn(true).once();
+		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
 		replay();
 		m_socketChannelResponder = new SocketChannelResponder(null, m_channel, new InetSocketAddress("localhost", 123));
@@ -39,6 +40,7 @@ public class SocketChannelResponderTest extends TestCase
 		verify();
 		reset();
 
+		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_WRITE)).andReturn(m_key).once();
 		replay();
 
@@ -58,6 +60,7 @@ public class SocketChannelResponderTest extends TestCase
 		PacketWriter writer = EasyMock.createMock(PacketWriter.class);
 		EasyMock.expect(m_channel.isConnected()).andReturn(true).once();
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
+		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		replay();
 		m_socketChannelResponder = new SocketChannelResponder(null, m_channel, new InetSocketAddress("localhost", 123));
 		m_socketChannelResponder.setKey(m_key);
@@ -67,6 +70,7 @@ public class SocketChannelResponderTest extends TestCase
 
 		verify();
 		reset();
+		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_WRITE)).andReturn(m_key).once();
 		replay();
 
@@ -82,6 +86,7 @@ public class SocketChannelResponderTest extends TestCase
 
 		// Write nothing of the packet.
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
+		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_WRITE)).andReturn(m_key).once();
 		EasyMock.expect(m_channel.write((ByteBuffer) null)).andReturn(0).once();
 		EasyMock.expect(writer.isEmpty()).andReturn(true).once();
@@ -106,6 +111,7 @@ public class SocketChannelResponderTest extends TestCase
 		// Write part of the packet.
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_WRITE)).andReturn(m_key).once();
+		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		EasyMock.expect(m_channel.write((ByteBuffer) null)).andReturn(3).once();
 		EasyMock.expect(m_channel.write((ByteBuffer) null)).andReturn(0).once();
 		EasyMock.expect(writer.isEmpty()).andReturn(false).times(5);
@@ -126,6 +132,7 @@ public class SocketChannelResponderTest extends TestCase
 		// Finish writing the packet.
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
 		EasyMock.expect(m_channel.write((ByteBuffer) null)).andReturn(1).once();
+		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		EasyMock.expect(writer.isEmpty()).andReturn(false).times(3);
 		EasyMock.expect(writer.isEmpty()).andReturn(true).times(3);
 		EasyMock.expect(writer.getBuffer()).andReturn(null).times(1);
@@ -143,6 +150,7 @@ public class SocketChannelResponderTest extends TestCase
 
 		// Test Empty read
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
+		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		EasyMock.expect(writer.isEmpty()).andReturn(true).times(2);
 		replay();
 		EasyMock.replay(writer);
@@ -176,6 +184,7 @@ public class SocketChannelResponderTest extends TestCase
 	{
 		NIOService nioService = new NIOService();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_CONNECT)).andReturn(m_key).times(2);
+		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		m_key.cancel();
 		EasyMock.expectLastCall().once();
 		replay();
@@ -192,6 +201,7 @@ public class SocketChannelResponderTest extends TestCase
 	{
 		NIOService nioService = new NIOService();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_CONNECT)).andReturn(m_key).times(2);
+		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		m_key.cancel();
 		EasyMock.expectLastCall().once();
 		replay();
@@ -208,6 +218,7 @@ public class SocketChannelResponderTest extends TestCase
 	{
 		NIOService nioService = new NIOService();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_CONNECT)).andReturn(m_key).times(4);
+		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		m_key.cancel();
 		EasyMock.expectLastCall().once();
 		replay();
