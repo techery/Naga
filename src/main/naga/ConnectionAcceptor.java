@@ -45,12 +45,12 @@ public interface ConnectionAcceptor
 	/**
 	 * Return true if the connection should be accepted, false otherwise.
 	 * <p>
-	 * <em>This callback is run on the NIOService thread. This means it will block
-	 * <u>all</u> other reads, writes and accepts on the service while it executes.</em>
-	 * <p>
+	 * <b>Note: This callback is run on the NIOService thread. This means it will block
+	 * <u>all</u> other reads, writes and accepts on the service while it executes.
 	 * For this reason it is recommended that this method should return fairly quickly
-	 * (e.g. don't make reverse ip lookups or similar - potentially very slow - calls).
-	 *
+	 * (i.e. don't make reverse ip lookups or similar - potentially very slow - calls).
+	 * </b>
+	 * 
 	 * @param inetSocketAddress the adress the connection came from.
 	 * @return true to accept, false to refuse.
 	 */

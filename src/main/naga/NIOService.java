@@ -17,6 +17,28 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * <p>
  * Use <code>service.openSocket(host, port)</code> to open a socket to a remote server,
  * and <code>service.openServerSocket(port)</code> to open a server socket locally.
+ * <p>
+ * Note that the NIOServerSocket by default opens in a "refuse connections" state. To
+ * start accepting players, the socket's acceptor must first be set to accept connections.
+ * See documentation for openServerSocket for more details.
+ * <p>
+ * Example use:
+ * <p>
+ * Using the server socket:
+ * <code><pre>
+ * NIOService service = new NIOService;
+ * NIOServerSocket serverSocket = service.openServerSocket(1234);
+ * serverSocket.setConnectionAcceptor(myAcceptor);
+ * serverSocket.listen(myObserver);
+ * </pre></code>
+ * Using regular sockets:
+ * <code><pre>
+ * NIOService service = new NIOService;
+ * NIOSocket serverSocket = service.openSocket("www.google.com", 1234);
+ * socket.listen(myObserver);
+ * // Asynchronous write by default:
+ * socket.write("Some message".getBytes());
+ * </pre></code>
  *
  * @author Christoffer Lerno
  * @version $Revision$ $Date$   $Author$

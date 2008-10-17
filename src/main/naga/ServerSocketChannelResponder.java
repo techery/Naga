@@ -27,7 +27,7 @@ class ServerSocketChannelResponder extends ChannelResponder implements NIOServer
 	{
 		super(service, channel, address);
 		m_observer = null;
-		setConnectionAcceptor(null);
+		setConnectionAcceptor(ConnectionAcceptor.ALLOW);
 		m_totalRefusedConnections = 0;
 		m_totalAcceptedConnections = 0;
 		m_totalFailedConnections = 0;
