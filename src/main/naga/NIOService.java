@@ -340,9 +340,9 @@ public class NIOService
 	}
 
 	/**
-	 * Runs wakeup on the selector, causing any block to be released.
+	 * Runs wakeup on the selector, causing any blocking select to be released.
 	 */
-	void wakeup()
+	public void wakeup()
 	{
 		m_selector.wakeup();
 	}
