@@ -22,7 +22,6 @@ import java.nio.ByteBuffer;
  * so on.
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class RegularPacketWriter implements PacketWriter
 {

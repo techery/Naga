@@ -11,7 +11,6 @@ import java.net.Socket;
  *
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public interface NIOSocket extends NIOAbstractSocket
 {

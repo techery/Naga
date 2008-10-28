@@ -10,7 +10,6 @@ import java.net.ServerSocket;
  * to react to new connections and other events.
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public interface NIOServerSocket extends NIOAbstractSocket
 {

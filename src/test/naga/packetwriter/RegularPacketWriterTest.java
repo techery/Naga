@@ -1,7 +1,6 @@
 package naga.packetwriter;
 /**
  * @author Christoffer Lerno 
- * @version $Revision$ $Date$   $Author$
  */
 
 import junit.framework.TestCase;

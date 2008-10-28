@@ -10,7 +10,6 @@ import java.nio.ByteBuffer;
  * and then bundles those bytes into a packet.
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class RawPacketReader implements PacketReader
 {

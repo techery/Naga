@@ -16,7 +16,6 @@ import java.io.DataOutputStream;
  * <p>
  * Use with java naga.examples.ValidationClient [host] [port] [account] [password]
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class ValidationClient
 {

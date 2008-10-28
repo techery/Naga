@@ -16,7 +16,6 @@ import java.net.InetSocketAddress;
  *
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public interface ConnectionAcceptor
 {

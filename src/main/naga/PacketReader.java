@@ -16,7 +16,6 @@ import java.nio.ByteBuffer;
  * <em>Note that getNextPacket() will be called repeatedly until it returns null.</em>
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public interface PacketReader
 {

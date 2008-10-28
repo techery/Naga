@@ -41,7 +41,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * </pre></code>
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class NIOService
 {

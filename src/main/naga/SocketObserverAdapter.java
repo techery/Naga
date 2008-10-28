@@ -4,7 +4,6 @@ package naga;
  * Class with null-implementation of all SocketObserver callbacks.
  * 
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class SocketObserverAdapter implements SocketObserver
 {

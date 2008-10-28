@@ -9,7 +9,6 @@ import java.nio.channels.SelectionKey;
  * A collection of utilites used by various classes.
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class NIOUtils
 {

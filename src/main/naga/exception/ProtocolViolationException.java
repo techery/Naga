@@ -6,7 +6,6 @@ import java.io.IOException;
  * Throw an exception due to unexpected data when reading packets.
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class ProtocolViolationException extends IOException
 {

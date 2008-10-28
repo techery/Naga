@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 class SocketChannelResponder extends ChannelResponder implements NIOSocket
 {

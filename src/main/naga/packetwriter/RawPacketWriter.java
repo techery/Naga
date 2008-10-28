@@ -11,7 +11,6 @@ import java.nio.ByteBuffer;
  * delimited data.
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class RawPacketWriter implements PacketWriter
 {

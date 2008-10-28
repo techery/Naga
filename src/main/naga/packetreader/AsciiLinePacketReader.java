@@ -6,7 +6,6 @@ package naga.packetreader;
  * This can be used for reading lines of ASCII characters.
  * 
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class AsciiLinePacketReader extends DelimiterPacketReader
 {

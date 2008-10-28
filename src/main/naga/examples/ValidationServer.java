@@ -12,7 +12,6 @@ import java.util.Map;
  * An example validation server to validate logins.
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class ValidationServer
 {

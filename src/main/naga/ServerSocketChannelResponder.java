@@ -9,7 +9,6 @@ import java.nio.channels.SocketChannel;
 
 /**
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 class ServerSocketChannelResponder extends ChannelResponder implements NIOServerSocket
 {

@@ -15,7 +15,6 @@ import java.io.IOException;
  * of the service.
  * 
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public interface ServerSocketObserver
 {

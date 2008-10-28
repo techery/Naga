@@ -6,7 +6,6 @@ import java.io.IOException;
  * Class with null-implementations for all callbacks.
  * 
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class ServerSocketObserverAdapter implements ServerSocketObserver
 {

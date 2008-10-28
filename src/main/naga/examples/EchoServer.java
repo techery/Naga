@@ -10,7 +10,6 @@ import java.io.IOException;
  * Run using java naga.examples.EchoServer [port]
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class EchoServer
 {

@@ -1,7 +1,6 @@
 package naga;
 /**
  * @author Christoffer Lerno 
- * @version $Revision$ $Date$   $Author$
  */
 
 import junit.framework.TestCase;

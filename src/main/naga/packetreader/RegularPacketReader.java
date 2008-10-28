@@ -18,7 +18,6 @@ import java.nio.ByteBuffer;
  * Note that the maximum size for 4 bytes is a signed 32 bit int, not unsigned.
  * 
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class RegularPacketReader implements PacketReader
 {

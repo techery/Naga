@@ -4,7 +4,6 @@ package naga.packetreader;
  * Reads a bytestream delimited by 0.
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class ZeroDelimitedPacketReader extends DelimiterPacketReader
 {

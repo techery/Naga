@@ -10,7 +10,6 @@ package naga;
  * of the service.
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public interface SocketObserver
 {

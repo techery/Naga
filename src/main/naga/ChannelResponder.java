@@ -12,7 +12,6 @@ import java.nio.channels.SelectionKey;
  * handling of key and channel as well as closing the socket.
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 abstract class ChannelResponder implements NIOAbstractSocket
 {

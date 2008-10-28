@@ -20,7 +20,6 @@ import java.nio.ByteBuffer;
  * turn for every call to getBuffer(). (See RegularPacketWriter for an example of this).
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public interface PacketWriter
 {

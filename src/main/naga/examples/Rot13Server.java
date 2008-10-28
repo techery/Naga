@@ -12,7 +12,6 @@ import java.io.IOException;
  * Run using java naga.examples.Rot13Server [port]
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class Rot13Server
 {

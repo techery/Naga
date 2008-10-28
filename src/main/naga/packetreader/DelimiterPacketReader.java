@@ -15,7 +15,6 @@ import java.nio.ByteBuffer;
  * The delimiter will never appear in the packet itself.
  *
  * @author Christoffer Lerno
- * @version $Revision$ $Date$   $Author$
  */
 public class DelimiterPacketReader implements PacketReader
 {
