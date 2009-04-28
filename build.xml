@@ -64,6 +64,9 @@
 
 	<target name="build" depends="compile, javadoc, create_manifest" description="Build jar">
 		<buildnumber file="version.properties"/>
+		<jar destfile="${dist.dir}/naga-no-em-${major.version}_${minor.version}-r${build.number}.jar"
+		     excludes="**/examples/**,**/eventmachine/**"
+		     basedir="${build.classes.dir}" manifest="${build.classes.dir}/META-INF/MANIFEST.MF"/>
 		<jar destfile="${dist.dir}/naga-${major.version}_${minor.version}-r${build.number}.jar"
 		     excludes="**/examples/**"
 		     basedir="${build.classes.dir}" manifest="${build.classes.dir}/META-INF/MANIFEST.MF"/>
