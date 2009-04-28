@@ -9,12 +9,15 @@ import java.io.IOException;
  * Creates a Rot13Server that takes a line of text and returns the Rot13 version of the
  * text.
  * <p/>
- * Run using java naga.examples.Rot13Server [port]
+ * Run using {@code java naga.examples.Rot13Server [port]}.
  *
  * @author Christoffer Lerno
  */
 public class Rot13Server
 {
+	Rot13Server()
+	{}
+	
 	/**
 	 * Runs the rot13 server.
 	 *

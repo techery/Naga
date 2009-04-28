@@ -1,6 +1,8 @@
 package naga.eventmachine;
 
 /**
+ * A cancellable, delayed event posted to the event service.
+ *
  * @author Christoffer Lerno
  */
 public interface DelayedEvent

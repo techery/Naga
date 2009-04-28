@@ -52,7 +52,7 @@ public class DelimiterPacketReader implements PacketReader
 		if (readBufferSize < 1) throw new IllegalArgumentException("Min buffer must at least be 1 byte.");
 		if (maxPacketSize > -1 && readBufferSize > maxPacketSize)
 		{
-			throw new IllegalArgumentException("Read buffer size be larger than max packet size.");
+			throw new IllegalArgumentException("Read buffer cannot be be larger than the max packet size.");
 		}
 		m_currentBuffer = ByteBuffer.allocate(readBufferSize);
 		m_buffer = null;

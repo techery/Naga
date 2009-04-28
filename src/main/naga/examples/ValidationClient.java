@@ -14,11 +14,14 @@ import java.io.DataOutputStream;
 /**
  * A client for exercising the validation server.
  * <p>
- * Use with java naga.examples.ValidationClient [host] [port] [account] [password]
+ * Use with {@code java naga.examples.ValidationClient [host] [port] [account] [password]}.
  * @author Christoffer Lerno
  */
 public class ValidationClient
 {
+	ValidationClient()
+	{}
+
 	/**
 	 * Make a login request to the server.
 	 *

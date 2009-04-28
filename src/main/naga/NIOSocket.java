@@ -9,7 +9,6 @@ import java.net.Socket;
  * The NIOSocket executes callbacks to a Socket observer
  * to react to incoming packets and other events.
  *
- *
  * @author Christoffer Lerno
  */
 public interface NIOSocket extends NIOAbstractSocket

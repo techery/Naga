@@ -3,27 +3,33 @@
 
 	<tstamp/>
 	<property file="version.properties"/>
+	<property file="build.properties"/>
 
 	<target name="init" description="init">
 		<!-- Create our temporary directories -->
-		<mkdir dir="_TEMP/classes"/>
-		<mkdir dir="_DIST"/>
+		<mkdir dir="${dist.dir}"/>
 	</target>
 
 	<target name="clear" description="clear temporary directories">
-		<delete file="_TEMP" quiet="true"/>
+		<delete dir="${build.dir}" quiet="true"/>
+	</target>
+
+	<target name="clear_compile_dir">
+		<delete dir="${build.classes.dir}"/>
+		<mkdir dir="${build.classes.dir}"/>
 	</target>
 
 	<target name="compile" depends="init" description="Compile the sources">
-		<javac srcdir="src/main"
-		       destdir="_TEMP/classes"
+		<antcall target="clear_compile_dir"/>
+		<javac srcdir="${main.dir}"
+		       destdir="${build.classes.dir}"
 		       source="1.5"
 		       optimize="on"/>
 	</target>
 
 	<target name="javadoc" description="Generate javadoc">
-		  <javadoc packagenames="naga.*" sourcepath="src/main"
-		           destdir="_TEMP/docs/api"
+		  <javadoc packagenames="naga.*" sourcepath="${main.dir}"
+		           destdir="${docs.dir}"
 		           author="true"
 		           version="true"
 		           use="true"
@@ -34,14 +40,15 @@
 	</target>
 	
 	<target name="compile_debug" depends="init" description="Compile the sources with debug info">
-			<javac srcdir="src/main" destdir="_TEMP/classes" source="1.5"
-			       debug="yes" debuglevel="lines,source" optimize="on"/>
+		<antcall target="clear_compile_dir"/>
+		<javac srcdir="${main.dir}" destdir="${build.classes.dir}" source="1.5"
+		       debug="yes" debuglevel="lines,source" optimize="on"/>
 	</target>
 
 	<!-- Creates a manifest -->
 	<target name="create_manifest" description="Creates a manifest">
-		<mkdir dir="_TEMP/classes/META-INF"/>
-		<manifest file="_TEMP/classes/META-INF/MANIFEST.MF">
+		<mkdir dir="${build.classes.dir}/META-INF"/>
+		<manifest file="${build.classes.dir}/META-INF/MANIFEST.MF">
 			<attribute name="Created-By" value="${user.name}"/>
 			<attribute name="Sealed" value="true"/>
 			 <section name="naga">
@@ -55,16 +62,17 @@
 		</manifest>
 	</target>
 
-	<target name="build" depends="compile, create_manifest" description="Build jar">
+	<target name="build" depends="compile, javadoc, create_manifest" description="Build jar">
 		<buildnumber file="version.properties"/>
-		<delete dir="_TEMP/classes/src"/>
-		<jar destfile="_DIST/naga-${major.version}_${minor.version}-r${build.number}.jar"
+		<jar destfile="${dist.dir}/naga-${major.version}_${minor.version}-r${build.number}.jar"
 		     excludes="**/examples/**"
-		     basedir="_TEMP/classes" manifest="_TEMP/classes/META-INF/MANIFEST.MF"/>
-		<copydir src="src/main/" dest="_TEMP/classes/src"/>
-		<jar destfile="_DIST/naga-debug-${major.version}_${minor.version}-r${build.number}.jar" manifest="_TEMP/classes/META-INF/MANIFEST.MF">
-			<fileset dir="_TEMP/classes"/>
-			<fileset dir="_TEMP" includes="docs/**"/>
+		     basedir="${build.classes.dir}" manifest="${build.classes.dir}/META-INF/MANIFEST.MF"/>
+		<copy todir="${build.classes.dir}/src">
+			<fileset dir="src/main/"/>
+		</copy>
+		<jar destfile="_DIST/naga-debug-${major.version}_${minor.version}-r${build.number}.jar" manifest="_BUILD/classes/META-INF/MANIFEST.MF">
+			<fileset dir="${build.classes.dir}" includes="**/*.java,**/*.class" excludes="**/package-info.java"/>
+			<fileset dir="${build.dir}" includes="docs/**/*"/>
 		</jar>
 	</target>
 

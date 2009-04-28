@@ -4,7 +4,6 @@ package naga.eventmachine;
  */
 
 import junit.framework.TestCase;
-import naga.NIOService;
 
 import java.util.Date;
 import java.util.Queue;
@@ -15,13 +14,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class EventMachineTest extends TestCase
 {
 	EventMachine m_eventMachine;
-	NIOService m_nioService;
 
 	@Override
 	protected void setUp() throws Exception
 	{
-		m_nioService = new NIOService();
-		m_eventMachine = new EventMachine(m_nioService);
+		m_eventMachine = new EventMachine();
 	}
 
 	public void testExceptionHandling() throws Exception
@@ -190,7 +187,7 @@ public class EventMachineTest extends TestCase
 
 	public void testNIO()
 	{
-		assertEquals(m_nioService, m_eventMachine.getNIOService());
+		assertNotNull(m_eventMachine.getNIOService());
 	}
 
 	public void testStartStop() throws Exception

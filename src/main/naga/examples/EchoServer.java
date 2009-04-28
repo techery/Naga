@@ -7,12 +7,15 @@ import java.io.IOException;
 /**
  * Creates a very simple echo server.
  * <p>
- * Run using java naga.examples.EchoServer [port]
+ * Run using {@code java naga.examples.EchoServer [port]}
  *
  * @author Christoffer Lerno
  */
 public class EchoServer
 {
+	EchoServer()
+	{}
+
 	/**
 	 * Runs the echo server.
 	 *

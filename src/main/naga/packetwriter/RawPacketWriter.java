@@ -5,9 +5,9 @@ import naga.PacketWriter;
 import java.nio.ByteBuffer;
 
 /**
- * Writes a byte packet to the stream without doing to it at all.
+ * Writes a byte packet to the stream without doing any changes to it.
  * <p>
- * This is commonly used when one wants to output text or similarly
+ * This is the commonly case when one wants to output text or similarly
  * delimited data.
  *
  * @author Christoffer Lerno

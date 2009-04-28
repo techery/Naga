@@ -15,6 +15,9 @@ import java.util.Map;
  */
 public class ValidationServer
 {
+	ValidationServer() {
+	}
+
 	public static void main(String... args)
 	{
 		int port = Integer.parseInt(args[0]);

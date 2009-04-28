@@ -2,46 +2,53 @@ package naga.eventmachine;
 
 import naga.NIOService;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.concurrent.PriorityBlockingQueue;
 
 /**
- * Event Service for driving asynchronous and delayed tasks together with the
- * Naga NIOService
+ * EventMachine is a simple event service for driving asynchronous and delayed tasks
+ * together with the a Naga NIOService.
  * <p>
- * Usage:
- * <p>
- * <code>
+ * Creating and starting an event machine:
  * <pre>
- * EventMachine em = new EventMachine(nioService);
- *
- * // Start our event machine by running the nio service on a separate thread:
+ * EventMachine em = new EventMachine();
+ * // Start our event machine thread:
  * em.start();
- *
- * // Schedule a runnable for delayed execution
+ * </pre>
+ * Delayed execution:
+ * <pre>
  * em.executeLater(new Runnable() {
  *   public void run()
  *   {
- *      // This will execute after 1 second on the nio thread.
+ *      // Code here will execute after 1 second on the nio thread.
  *   }
  * }, 1000);
- *
- * // Schedule a runnable to execute as soon as possible.
+ * </pre>
+ * Asynchronous execution, i.e. putting a task from another thread
+ * to be executed on the EventMachine thread.
+ * <pre>
  * em.asyncExecute(new Runnable() {
  *   public void run()
  *   {
- *      // This code will be executed on the nio thread.
+ *      // Code here will be executed on the nio thread.
  *   }
  * });
- *
- * // Schedule a timeout runnable
- * DelayedEvent timeout = em.executeLater(new TimeoutRunnable(), 60000);
- * // Cancel the event before it is executed.
- * timeout.cancel();
  * </pre>
- * </code>
+ * It is possible to cancel scheduled tasks:
+ * <pre>
+ * // Schedule an event
+ * DelayedEvent event = em.executeLater(new Runnable()
+ *   public void run()
+ *   {
+ *      // Code to run in 1 minute.
+ *   }
+ * }, 60000);
+ * // Cancel the event before it is executed.
+ * event.cancel();
+ * </pre>
  *
  * @author Christoffer Lerno
  */
@@ -53,13 +60,13 @@ public class EventMachine
 	private volatile ExceptionObserver m_observer;
 
 	/**
-	 * Creates a new EventMachine.
+	 * Creates a new EventMachine with an embedded NIOService.
 	 *
-	 * @param nioService the NIOService this event service should use.
+	 * @throws IOException if we fail to set up the internal NIOService.
 	 */
-	public EventMachine(NIOService nioService)
+	public EventMachine() throws IOException
 	{
-		m_service = nioService;
+		m_service = new NIOService();
 		m_queue = new PriorityBlockingQueue<DelayedAction>();
 		m_observer = ExceptionObserver.DEFAULT;
 		m_runThread = null;
@@ -68,7 +75,7 @@ public class EventMachine
 	/**
 	 * Execute a runnable on the Event/NIO thread.
 	 * <p>
-	 * This method is thread-safe.
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @param runnable the runnable to execute on the server thread as soon as possible,
 	 */
@@ -83,7 +90,7 @@ public class EventMachine
 	 * This is the primary way to execute delayed events, typically time-outs and similar
 	 * behaviour.
 	 * <p>
-	 * <i>This method is thread-safe.</i>
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @param runnable the runnable to execute after the given delay.
 	 * @param msDelay the delay until executing this runnable.
@@ -114,7 +121,7 @@ public class EventMachine
 	 * <p/>
 	 * This is the primary way to execute scheduled events.
 	 * <p/>
-	 * <i>This method is thread-safe.</i>
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @param runnable the runnable to execute at the given time.
 	 * @param date the time date when this runnable should execute.
@@ -132,7 +139,7 @@ public class EventMachine
 	 * The observer will receive all exceptions thrown by the underlying NIOService
 	 * and by queued events.
 	 * <p>
-	 * <i>This method is thread-safe.</i>
+	 * <em>This method is thread-safe.</em>
 	 *
 	 * @param observer the observer to use, may not be null.
 	 * @throws NullPointerException if the observer is null.
@@ -155,6 +162,13 @@ public class EventMachine
 		return action == null ? Long.MAX_VALUE : action.getTime();
 	}
 
+	/**
+	 * Causes the event machine to start running on a separate thread together with the
+	 * NIOService.
+	 * <p/>
+	 * Note that the NIOService should not be called (using {@link naga.NIOService#selectNonBlocking()} and related
+	 * functions) on another thread if the EventMachine is used.
+	 */
 	public synchronized void start()
 	{
 		if (m_runThread != null) throw new IllegalStateException("Service already running.");
@@ -179,6 +193,9 @@ public class EventMachine
 		m_runThread.start();
 	}
 
+	/**
+	 * Stops the event machine thread.
+	 */
 	public synchronized void stop()
 	{
 		if (m_runThread == null) throw new IllegalStateException("Service is not running.");

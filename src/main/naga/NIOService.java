@@ -15,8 +15,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Common usage is to create a single instance of this service and
  * then run one other the select methods in a loop.
  * <p>
- * Use <code>service.openSocket(host, port)</code> to open a socket to a remote server,
- * and <code>service.openServerSocket(port)</code> to open a server socket locally.
+ * Use {@link naga.NIOService#openSocket(String, int)} to open a socket to a remote server,
+ * and {@link naga.NIOService#openServerSocket(int)}  to open a server socket locally.
  * <p>
  * Note that the NIOServerSocket by default opens in a "refuse connections" state. To
  * start accepting players, the socket's acceptor must first be set to accept connections.
