@@ -13,6 +13,12 @@ import java.nio.channels.SelectionKey;
 
 public class NIOUtilsTest extends TestCase
 {
+	@SuppressWarnings({"InstantiationOfUtilityClass"})
+	public void testInstance()
+	{
+		new NIOUtils();
+	}
+
 	public void testGetPacketSizeFromByteBuffer() throws Exception
 	{
 		assertEquals(0xFF00FE,
@@ -31,19 +37,30 @@ public class NIOUtilsTest extends TestCase
 	{
 		try
 		{
+			NIOUtils.getByteBufferFromPacketSize(3, -1, true);
+			fail();
+		}
+		catch (IllegalArgumentException e)
+		{
+			assertEquals("Payload size is less than 0.", e.getMessage());
+		}
+		try
+		{
 			NIOUtils.getByteBufferFromPacketSize(3, 0xFFFFFF + 1, true);
 			fail("Should throw exception");
 		}
-		catch (Exception e)
+		catch (IllegalArgumentException e)
 		{
+			assertEquals("Payload size cannot be encoded into 3 byte(s).", e.getMessage());
 		}
 		try
 		{
 			NIOUtils.getByteBufferFromPacketSize(1, 0xFF + 1, true);
-			fail("Should throw exception");
+			fail("Payload size cannot be encoded into 3 byte(s).");
 		}
-		catch (Exception e)
+		catch (IllegalArgumentException e)
 		{
+			assertEquals("Payload size cannot be encoded into 1 byte(s).", e.getMessage());
 		}
 	}
 

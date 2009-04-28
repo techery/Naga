@@ -13,7 +13,7 @@ import java.nio.channels.SelectionKey;
 public class NIOUtils
 {
 
-	private NIOUtils() {}
+	NIOUtils() {}
 	
 	/**
 	 * Silently close both a key and a channel.
@@ -39,9 +39,9 @@ public class NIOUtils
 	 */
 	public static ByteBuffer getByteBufferFromPacketSize(int headerSize, int valueToEncode, boolean bigEndian)
 	{
-		if (valueToEncode < 0) throw new IllegalArgumentException("Payload size is less than 0");
+		if (valueToEncode < 0) throw new IllegalArgumentException("Payload size is less than 0.");
 		if (valueToEncode >> (headerSize * 8) > 0)
-			throw new IllegalArgumentException("Payload size cannot be encoded into " + headerSize + " bytes.");
+			throw new IllegalArgumentException("Payload size cannot be encoded into " + headerSize + " byte(s).");
 		ByteBuffer header = ByteBuffer.allocate(headerSize);
 		for (int i = 0; i < headerSize; i++)
 		{
