@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * Using regular sockets:
  * <code><pre>
  * NIOService service = new NIOService;
- * NIOSocket serverSocket = service.openSocket("www.google.com", 1234);
+ * NIOSocket socket = service.openSocket("www.google.com", 1234);
  * socket.listen(myObserver);
  * // Asynchronous write by default:
  * socket.write("Some message".getBytes());
