@@ -11,7 +11,7 @@ import java.net.InetSocketAddress;
  * in most cases it is enough to use the ConnectorAcceptor.ALLOW which
  * accepts all incoming connections.
  * <p>
- * Note that a NIOServerSocket defaults to the ConnectorAcceptor.DENY
+ * Note that a NIOServerSocket defaults to the ConnectorAcceptor.ALLOW 
  * acceptor when it is created.
  *
  *
