@@ -85,6 +85,12 @@ public class NIOUtilsTest extends TestCase
 		assertEquals(0xFFFFFE,
 		             NIOUtils.getPacketSizeFromByteBuffer(NIOUtils.getByteBufferFromPacketSize(3, 0xFFFFFE, endian),
 		                                                  endian));
+        assertEquals(Integer.MAX_VALUE,
+                     NIOUtils.getPacketSizeFromByteBuffer(NIOUtils.getByteBufferFromPacketSize(4, Integer.MAX_VALUE, endian),
+                                                          endian));
+        assertEquals(0x00000000,
+                     NIOUtils.getPacketSizeFromByteBuffer(NIOUtils.getByteBufferFromPacketSize(4, 0x00000000, endian),
+                                                          endian));
 	}
 
 	public void testCancelKeySilently() throws Exception

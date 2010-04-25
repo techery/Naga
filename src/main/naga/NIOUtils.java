@@ -40,14 +40,18 @@ public class NIOUtils
 	public static ByteBuffer getByteBufferFromPacketSize(int headerSize, int valueToEncode, boolean bigEndian)
 	{
 		if (valueToEncode < 0) throw new IllegalArgumentException("Payload size is less than 0.");
-		if (valueToEncode >> (headerSize * 8) > 0)
+        // If header size is 4, we get valueToEncode >> 32, which is defined as valueToEncode >> 0 for int.
+        // Therefore, we handle the that case separately, as any int will fit in 4 bytes.
+        if (headerSize != 4 && valueToEncode >> (headerSize * 8) > 0)
+        {
 			throw new IllegalArgumentException("Payload size cannot be encoded into " + headerSize + " byte(s).");
+        }
 		ByteBuffer header = ByteBuffer.allocate(headerSize);
 		for (int i = 0; i < headerSize; i++)
 		{
 			int index = bigEndian ? (headerSize - 1 - i) : i;
-			int value = (valueToEncode >> (8 * index)) % 256;
-			header.put((byte) value);
+            // We do not need to extend valueToEncode here, since the maximum is valueToEncode >> 24
+			header.put((byte) (valueToEncode >> (8 * index) & 0xFF));
 		}
 		header.rewind();
 		return header;
@@ -65,7 +69,7 @@ public class NIOUtils
 	 */
 	public static int getPacketSizeFromByteBuffer(ByteBuffer header, boolean bigEndian)
 	{
-		int packetSize = 0;
+		long packetSize = 0;
 		if (bigEndian)
 		{
 			header.rewind();
@@ -78,14 +82,15 @@ public class NIOUtils
 		else
 		{
 			header.rewind();
-			int multiple = 1;
+			int shift = 0;
 			while (header.hasRemaining())
 			{
-				packetSize += multiple * (header.get() & 0xFF);
-				multiple <<= 8;
+                // We do not need to extend valueToEncode here, since the maximum is valueToEncode >> 24
+				packetSize += (header.get() & 0xFF) << shift;
+				shift += 8;
 			}
 		}
-		return packetSize;
+		return (int) packetSize;
 	}
 
 	/**
