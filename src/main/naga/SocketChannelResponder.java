@@ -17,14 +17,14 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 class SocketChannelResponder extends ChannelResponder implements NIOSocket
 {
-	private final static byte[] CLOSE_PACKET = new byte[0];
+	private final static Object CLOSE_PACKET = new Object();
 	private final static IOException CLOSE_EXCEPTION = new IOException("CLOSE");
 	private int m_bytesRead;
 	private int m_bytesWritten;
 	private int m_maxQueueSize;
 	private long m_timeOpened;
 	private final AtomicLong m_bytesInQueue;
-	private ConcurrentLinkedQueue<byte[]> m_packetQueue;
+	private ConcurrentLinkedQueue<Object> m_packetQueue;
 	private PacketReader m_packetReader;
 	private PacketWriter m_packetWriter;
 	private volatile SocketObserver m_socketObserver;
@@ -38,7 +38,7 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 		m_packetWriter = new RawPacketWriter();
 		m_packetReader = new RawPacketReader();
 		m_bytesInQueue = new AtomicLong(0L);
-		m_packetQueue = new ConcurrentLinkedQueue<byte[]>();
+		m_packetQueue = new ConcurrentLinkedQueue<Object>();
 	}
 
 	void keyInitialized()
@@ -113,16 +113,19 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 		if (m_packetWriter.isEmpty())
 		{
 			// Retrieve next packet from the queue.
-			byte[] nextPacket = m_packetQueue.poll();
-
-			if (nextPacket == CLOSE_PACKET) throw CLOSE_EXCEPTION;
-
-			if (nextPacket != null)
-			{
-				m_packetWriter.setPacket(nextPacket);
-				// Remove the space reserved in the queue.
-				m_bytesInQueue.addAndGet(-nextPacket.length);
-			}
+			Object nextPacket = m_packetQueue.poll();
+            while (nextPacket != null && nextPacket instanceof PacketWriter)
+            {
+                // Switch packet writer.
+                m_packetWriter = (PacketWriter) nextPacket;
+                nextPacket = m_packetQueue.poll();
+            }
+            if (nextPacket == null) return;
+            if (nextPacket == CLOSE_PACKET) throw CLOSE_EXCEPTION;
+            byte[] data = (byte[]) nextPacket;
+            m_packetWriter.setPacket(data);
+            // Remove the space reserved in the queue.
+            m_bytesInQueue.addAndGet(-data.length);
 		}
 	}
 
@@ -294,8 +297,10 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 
 	public void setPacketWriter(PacketWriter packetWriter)
 	{
-		m_packetWriter = packetWriter;
-	}
+        if (packetWriter == null) throw new NullPointerException();
+        m_packetQueue.offer(packetWriter);
+        addInterest(SelectionKey.OP_WRITE);
+ 	}
 
 	public SocketChannel getChannel()
 	{

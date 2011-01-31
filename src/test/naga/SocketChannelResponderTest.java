@@ -58,7 +58,8 @@ public class SocketChannelResponderTest extends TestCase
 
 		PacketWriter writer = EasyMock.createMock(PacketWriter.class);
 		EasyMock.expect(m_channel.isConnected()).andReturn(true).once();
-		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
+        EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
+		EasyMock.expect(m_key.interestOps(4)).andReturn(m_key).once();
 		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		replay();
 		m_socketChannelResponder = new SocketChannelResponder(null, m_channel, new InetSocketAddress("localhost", 123));
@@ -69,6 +70,20 @@ public class SocketChannelResponderTest extends TestCase
 
 		verify();
 		reset();
+        EasyMock.expect(m_key.interestOps()).andReturn(4).atLeastOnce();
+        EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).atLeastOnce();
+
+        EasyMock.expect(writer.isEmpty()).andReturn(true).once();
+        EasyMock.replay(writer);
+        replay();
+
+        m_socketChannelResponder.socketReadyForWrite();
+        
+        verify();
+        reset();
+        EasyMock.verify(writer);
+        EasyMock.reset(writer);
+
 		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_WRITE)).andReturn(m_key).once();
 		replay();
@@ -82,7 +97,7 @@ public class SocketChannelResponderTest extends TestCase
 
 		verify();
 		reset();
-
+        
 		// Write nothing of the packet.
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
 		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();

@@ -24,6 +24,7 @@ abstract class ChannelResponder implements NIOAbstractSocket
 	private volatile SelectionKey m_key;
 	private volatile int m_interestOps;
 	private boolean m_observerSet;
+    private Object m_tag;
 
 	/**
 	 * Creates a new channel responder.
@@ -43,7 +44,9 @@ abstract class ChannelResponder implements NIOAbstractSocket
 		m_address = address;
 		m_ip = address.getAddress().getHostAddress();
 		m_port = address.getPort();
+        m_tag = null;
 	}
+
 
 	public InetSocketAddress getAddress()
 	{
@@ -60,7 +63,17 @@ abstract class ChannelResponder implements NIOAbstractSocket
 		return m_port;
 	}
 
-	/**
+    public void setTag(Object tag)
+    {
+        m_tag = tag;
+    }
+
+    public Object getTag()
+    {
+        return m_tag;
+    }
+
+    /**
 	 * @return the NIOService this responder is connected to.
 	 */
 	protected NIOService getNIOService()

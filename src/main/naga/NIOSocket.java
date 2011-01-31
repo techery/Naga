@@ -100,6 +100,9 @@ public interface NIOSocket extends NIOAbstractSocket
 
 	/**
 	 * Sets the packet writer for this socket.
+     * <p>
+     * <em>This method is thread-safe and all packets posted before the writer is
+     * changed is guaranteed to be serialized using the previous writer.</em>
 	 *
 	 * @param packetWriter the packet writer to interpret the incoming byte stream.
 	 */

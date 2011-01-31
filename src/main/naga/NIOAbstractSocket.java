@@ -51,4 +51,19 @@ public interface NIOAbstractSocket
 	 * @return the port of this socket.
 	 */
 	int getPort();
+
+    /**
+     * Returns the tag for this socket.
+     *
+     * @return the tag or null if no tag has been set.
+     */
+    Object getTag();
+
+    /**
+     * Returns the tag for this socket. A tag is an object
+     * that you can associate with the socket and retrieve later.
+     *
+     * @param tag the new tag for this socket.
+     */
+    void setTag(Object tag);
 }
