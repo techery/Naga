@@ -29,6 +29,16 @@ public interface NIOSocket extends NIOAbstractSocket
 	 */
 	boolean write(byte[] packet);
 
+    /**
+     * Queue a runnable in the packet queue. This runnable will execute
+     * after the latest packet in the queue is sent.
+     * <p>
+     * <em>This method is thread-safe.</em>
+     *
+     * @param runnable the runnable to queue.
+     */
+    void queue(Runnable runnable);
+
 	/**
 	 * Return the total number of bytes read on this socket since
 	 * it was opened.

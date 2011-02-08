@@ -17,8 +17,6 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 class SocketChannelResponder extends ChannelResponder implements NIOSocket
 {
-	private final static Object CLOSE_PACKET = new Object();
-	private final static IOException CLOSE_EXCEPTION = new IOException("CLOSE");
 	private int m_bytesRead;
 	private int m_bytesWritten;
 	private int m_maxQueueSize;
@@ -51,12 +49,20 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 
 	public void closeAfterWrite()
 	{
-		// Add a null packet signaling close.
-		m_packetQueue.offer(CLOSE_PACKET);
-
-		// Make sure the interests are set.
-		addInterest(SelectionKey.OP_WRITE);
+        queue(new Runnable() {
+            public void run()
+            {
+                m_packetQueue.clear();
+                close(null);
+            }
+        });
 	}
+
+    public void queue(Runnable runnable)
+    {
+        m_packetQueue.offer(runnable);
+        addInterest(SelectionKey.OP_WRITE);
+    }
 
 	public boolean write(byte[] packet)
 	{
@@ -114,14 +120,12 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 		{
 			// Retrieve next packet from the queue.
 			Object nextPacket = m_packetQueue.poll();
-            while (nextPacket != null && nextPacket instanceof PacketWriter)
+            while (nextPacket != null && nextPacket instanceof Runnable)
             {
-                // Switch packet writer.
-                m_packetWriter = (PacketWriter) nextPacket;
+                ((Runnable) nextPacket).run();
                 nextPacket = m_packetQueue.poll();
             }
             if (nextPacket == null) return;
-            if (nextPacket == CLOSE_PACKET) throw CLOSE_EXCEPTION;
             byte[] data = (byte[]) nextPacket;
             m_packetWriter.setPacket(data);
             // Remove the space reserved in the queue.
@@ -158,9 +162,7 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 		}
 		catch (Exception e)
 		{
-			// Do not close with an exception if this was triggered by
-			// "close after write".
-			close(e == CLOSE_EXCEPTION ? null : e);
+			close(e);
 		}
 	}
 	
@@ -295,11 +297,15 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 		m_packetReader = packetReader;
 	}
 
-	public void setPacketWriter(PacketWriter packetWriter)
+	public void setPacketWriter(final PacketWriter packetWriter)
 	{
         if (packetWriter == null) throw new NullPointerException();
-        m_packetQueue.offer(packetWriter);
-        addInterest(SelectionKey.OP_WRITE);
+        queue(new Runnable() {
+            public void run()
+            {
+                m_packetWriter = packetWriter;
+            }
+        });
  	}
 
 	public SocketChannel getChannel()
