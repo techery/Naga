@@ -15,6 +15,7 @@ public class RawPacketReader implements PacketReader
 {
 	public final static int DEFAULT_BUFFER_SIZE = 256;
 	private final ByteBuffer m_buffer;
+    private byte[] m_packet;
 
 	/**
 	 * Create a new reader instance. With a given read buffer size (this is
@@ -25,6 +26,7 @@ public class RawPacketReader implements PacketReader
 	public RawPacketReader(int bufferSize)
 	{
 		m_buffer = ByteBuffer.allocate(bufferSize);
+        m_packet = null;
 	}
 
 	/**
@@ -35,18 +37,28 @@ public class RawPacketReader implements PacketReader
 		this(DEFAULT_BUFFER_SIZE);
 	}
 
-	public ByteBuffer getBuffer()
+    public void prepareBuffer() throws ProtocolViolationException
+    {
+        m_buffer.clear();
+    }
+
+    public ByteBuffer getBuffer()
 	{
 		return m_buffer;
 	}
 
-	public byte[] getNextPacket() throws ProtocolViolationException
+    public void readFinished()
+    {
+        if (m_buffer.position() == 0) return;
+        m_buffer.flip();
+        m_packet = new byte[m_buffer.remaining()];
+        m_buffer.put(m_packet);
+    }
+
+    public byte[] getNextPacket() throws ProtocolViolationException
 	{
-		if (m_buffer.position() == 0) return null;
-		m_buffer.flip();
-		byte[] packet = new byte[m_buffer.remaining()];
-		m_buffer.get(packet);
-		m_buffer.clear();
-		return packet;
+        byte[] packet = m_packet;
+        m_packet = null;
+        return packet;
 	}
 }

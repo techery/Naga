@@ -25,6 +25,7 @@ public class RegularPacketReader implements PacketReader
 	private ByteBuffer m_header;
 	private ByteBuffer m_content;
 	private int m_contentSize = -1;
+    private byte[] m_nextPacket;
 
 	/**
 	 * Creates a regular packet reader with the given header size.
@@ -39,60 +40,68 @@ public class RegularPacketReader implements PacketReader
 		m_header = ByteBuffer.allocate(headerSize);
 		m_contentSize = -1;
 		m_content = null;
+        m_nextPacket = null;
 	}
 
-	/**
-	 * Return the next buffer to use.
-	 *
-	 * @return the next buffer to use.
-	 * @throws ProtocolViolationException if the header was read and the size of the content is
-	 * larger or equal to Integer.MAX_VALUE.
-	 */
-	public ByteBuffer getBuffer() throws ProtocolViolationException
-	{
-		if (m_header.hasRemaining()) return m_header;
-		prepareContentBuffer();
-		return m_content;
-	}
-
-	/**
-	 * Tries to read and parse the header if possible.
-	 * <P>
-	 * Makes sure that the content buffer is initialized if the header has finished reading.
+    /**
+     * Prepares the buffer
+     *
+     * Makes sure that the content buffer is initialized if the header has finished reading.
 	 *
 	 * @throws ProtocolViolationException if the header indicates that the size of the
 	 * content is equal to or larger than Integer.MAX_VALUE.
+     */
+    public void prepareBuffer() throws ProtocolViolationException
+    {
+    }
+
+    /**
+	 * Return the next buffer to use.
+	 *
+	 * @return the next buffer to use.
+	 * larger or equal to Integer.MAX_VALUE.
 	 */
-	private void prepareContentBuffer() throws ProtocolViolationException
+	public ByteBuffer getBuffer()
 	{
-		if (m_contentSize < 0 && !m_header.hasRemaining())
-		{
-			m_contentSize = NIOUtils.getPacketSizeFromByteBuffer(m_header, m_bigEndian);
-			if (m_contentSize < 0 || m_contentSize >= Integer.MAX_VALUE)
-			{
-				throw new ProtocolViolationException("Content size out of range, was: " + m_contentSize);
-			}
-			m_content = ByteBuffer.allocate(m_contentSize);
-		}
+        return m_contentSize < 0 ? m_header : m_content;
 	}
 
-	/**
+    public void readFinished() throws ProtocolViolationException
+    {
+        if (m_contentSize >= 0)
+        {
+            if (m_content.remaining() > 0) return;
+            m_nextPacket = m_content.array();
+            m_content = null;
+            m_header.rewind();
+            m_contentSize = -1;
+            return;
+        }
+        if (m_header.remaining() > 0) return;
+        m_contentSize = NIOUtils.getPacketSizeFromByteBuffer(m_header, m_bigEndian);
+        if (m_contentSize < 0 || m_contentSize >= Integer.MAX_VALUE)
+        {
+            throw new ProtocolViolationException("Content size out of range, was: " + m_contentSize);
+        }
+        if (m_contentSize == 0)
+        {
+            m_header.rewind();
+            m_nextPacket = new byte[0];
+            m_contentSize = -1;
+            return;
+        }
+        m_content = ByteBuffer.allocate(m_contentSize);
+    }
+
+    /**
 	 * Return the next packet or null if no complete packet can be constructed.
 	 *
 	 * @return the next packet available or null if none is available.
-	 * @throws ProtocolViolationException if the size of the packet is larger or equal to Integer.MAX_VALUE.
 	 */
 	public byte[] getNextPacket() throws ProtocolViolationException
 	{
-		prepareContentBuffer();
-		if (m_contentSize < 0 || m_content.hasRemaining())
-		{
-			return null;
-		}
-		byte[] content = m_content.array();
-		m_content = null;
-		m_header.rewind();
-		m_contentSize = -1;
-		return content;
+        byte[] packet = m_nextPacket;
+        m_nextPacket = null;
+		return packet;
 	}
 }

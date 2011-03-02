@@ -92,19 +92,19 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 		try
 		{
 			if (!isConnected()) throw new IOException("Channel not connected.");
-			int read;
-			while ((read = getChannel().read(m_packetReader.getBuffer())) > 0)
-			{
-				m_bytesRead += read;
-				byte[] packet;
+            while (true)
+            {
+                m_packetReader.prepareBuffer();
+                int read = getChannel().read(m_packetReader.getBuffer());
+                if (read < 0) throw new EOFException("Buffer read -1");
+                if (read == 0) return;
+                m_bytesRead += read;
+                m_packetReader.readFinished();
+                byte[] packet;
 				while ((packet = m_packetReader.getNextPacket()) != null)
 				{
 					m_socketObserver.packetReceived(this, packet);
 				}
-			}
-			if (read < 0)
-			{
-				throw new EOFException("Buffer read -1");
 			}
 		}
 		catch (Exception e)

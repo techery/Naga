@@ -19,6 +19,8 @@ import java.nio.ByteBuffer;
  */
 public interface PacketReader
 {
+    public void prepareBuffer() throws ProtocolViolationException;
+
 	/**
 	 * Return the currently used byte buffer. The NIOSocket will use this byte buffer and perform
 	 * a SocketChannel.read(ByteBuffer) on it.
@@ -30,7 +32,9 @@ public interface PacketReader
 	 * @throws ProtocolViolationException if a protocol violation was detected when
 	 * reading preparing the buffer.
 	 */
-	ByteBuffer getBuffer() throws ProtocolViolationException;
+	ByteBuffer getBuffer();
+
+    public void readFinished() throws ProtocolViolationException;
 
 	/**
 	 * Return the next packet constructed from the data read in the buffers.

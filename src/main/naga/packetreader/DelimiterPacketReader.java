@@ -83,36 +83,43 @@ public class DelimiterPacketReader implements PacketReader
 		m_maxPacketSize = maxPacketSize;
 	}
 
-	/**
-	 * Return the currently used byte buffer.
+    /**
+	 * Prepare the byte buffer by checking that the buffer isn't already full.
 	 *
-	 * @return the byte buffer to use.
 	 * @throws ProtocolViolationException if the internal buffer already exceeds the maximum size.
 	 */
-	public ByteBuffer getBuffer() throws ProtocolViolationException
+    public void prepareBuffer() throws ProtocolViolationException
+    {
+        if (m_maxPacketSize > -1 && m_buffer != null && m_buffer.length > m_maxPacketSize)
+        {
+            throw new ProtocolViolationException("Packet size exceeds " + m_maxPacketSize);
+        }
+    }
+
+	public ByteBuffer getBuffer()
 	{
-		if (m_maxPacketSize > -1 && m_buffer != null && m_buffer.length > m_maxPacketSize)
-		{
-			throw new ProtocolViolationException("Packet size exceeds " + m_maxPacketSize);
-		}
 		return m_currentBuffer;
 	}
 
-	public byte[] getNextPacket() throws ProtocolViolationException
+    public void readFinished()
+    {
+        if (m_currentBuffer.position() > 0)
+        {
+            m_currentBuffer.flip();
+            int oldBufferLength = m_buffer == null ? 0 : m_buffer.length;
+            byte[] newBuffer = new byte[oldBufferLength + m_currentBuffer.remaining()];
+            if (m_buffer != null)
+            {
+                System.arraycopy(m_buffer, 0, newBuffer, 0, m_buffer.length);
+            }
+            m_currentBuffer.get(newBuffer, oldBufferLength, m_currentBuffer.remaining());
+            m_currentBuffer.clear();
+            m_buffer = newBuffer;
+        }
+    }
+
+    public byte[] getNextPacket() throws ProtocolViolationException
 	{
-		if (m_currentBuffer.position() > 0)
-		{
-			m_currentBuffer.flip();
-			int oldBufferLength = m_buffer == null ? 0 : m_buffer.length;
-			byte[] newBuffer = new byte[oldBufferLength + m_currentBuffer.remaining()];
-			if (m_buffer != null)
-			{
-				System.arraycopy(m_buffer, 0, newBuffer, 0, m_buffer.length);
-			}
-			m_currentBuffer.get(newBuffer, oldBufferLength, m_currentBuffer.remaining());
-			m_currentBuffer.clear();
-			m_buffer = newBuffer;
-		}
 		if (m_buffer == null) return null;
 		for (int i = 0; i < m_buffer.length; i++)
 		{
