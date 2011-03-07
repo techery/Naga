@@ -1,9 +1,5 @@
-package naga.ssl;
+package naga;
 
-import naga.NIOSocket;
-import naga.NIOUtils;
-import naga.PacketReader;
-import naga.PacketWriter;
 import naga.exception.ProtocolViolationException;
 import naga.packetreader.RawPacketReader;
 import naga.packetwriter.RawPacketWriter;
@@ -39,15 +35,17 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
     private PacketWriter m_writer;
     private ByteBuffer m_partialIncomingBuffer;
     private ByteBuffer[] m_initialOutBuffer;
-    private NIOSocket m_socket;
+    private final NIOSocket m_socket;
+    private final SSLSocketChannelResponder m_responder;
 
-    public SSLPacketHandler(SSLEngine engine, NIOSocket socket)
+    public SSLPacketHandler(SSLEngine engine, NIOSocket socket, SSLSocketChannelResponder responder)
     {
         m_engine = engine;
         m_socket = socket;
         m_partialIncomingBuffer = null;
         m_writer = RawPacketWriter.INSTANCE;
         m_reader = RawPacketReader.INSTANCE;
+        m_responder = responder;
     }
 
     public PacketReader getReader()
@@ -129,7 +127,8 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
         }
         catch (SSLException e)
         {
-            throw new ProtocolViolationException(e.getMessage());
+            m_responder.closeDueToSSLException(e);
+            return null;
         }
     }
 
@@ -144,6 +143,7 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
                 queueSSLTasks();
                 break;
             case FINISHED:
+                m_responder.handshakeCompleted();
                 m_socket.write(new byte[0]);
                 break;
             case NEED_WRAP:
@@ -198,11 +198,7 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
 
                 if (result.getStatus() != SSLEngineResult.Status.OK) throw new SSLException("Unexpectedly not ok wrapping handshake data, was " + result.getStatus());
 
-                // Spawn tasks if necessary.
-                if (result.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.NEED_TASK)
-                {
-                    queueSSLTasks();
-                }
+                reactToHandshakeStatus(result.getHandshakeStatus());
             }
             catch (SSLException e)
             {
@@ -217,12 +213,25 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
         // Use the shared buffer.
         ByteBuffer buffer = SSL_BUFFER.get();
         buffer.clear();
+
+        if (NIOUtils.isEmpty(byteBuffers))
+        {
+            // Exit early if we have no data to encrypt.
+            if (m_initialOutBuffer == null) return null;
+        }
+        else
+        {
+            // Only convert non-empty buffers
+            byteBuffers = m_writer.write(byteBuffers);
+        }
+
+        // If we have an initial buffer, send it.
         if (m_initialOutBuffer != null)
         {
             byteBuffers = NIOUtils.concat(m_initialOutBuffer, byteBuffers);
             m_initialOutBuffer = null;
         }
-        byteBuffers = m_writer.write(byteBuffers);
+
         ByteBuffer[] encrypted = null;
 
         // While we have things left to encrypt.
@@ -251,5 +260,11 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
     public SSLEngine getSSLEngine()
     {
         return m_engine;
+    }
+
+    void begin() throws SSLException
+    {
+        m_engine.beginHandshake();
+        reactToHandshakeStatus(m_engine.getHandshakeStatus());
     }
 }

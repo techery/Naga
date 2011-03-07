@@ -1,8 +1,6 @@
 package naga;
 
-import naga.ssl.NIOSocketSSL;
-import naga.ssl.SSLSocketChannelResponder;
-
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -208,22 +206,42 @@ public class NIOService
         return new SSLSocketChannelResponder(registerSocketChannel(channel, address), sslEngine, true);
     }
 
-	/**
-	 * Open a server socket on the given port.
-	 * <p>
-	 * This roughly corresponds to using new ServerSocket(port, backlog);
-	 * <p>
-	 * <em>This method is thread-safe.</em>
-	 *
-	 * @param port the port to open.
-	 * @param backlog the maximum connection backlog (i.e. connections pending accept)
-	 * @return a NIOServerSocket for asynchronous connection to the server socket.
-	 * @throws IOException if registering the socket fails.
-	 */
-	public NIOServerSocket openServerSocket(int port, int backlog) throws IOException
-	{
-		return openServerSocket(new InetSocketAddress(port), backlog);
-	}
+
+
+    /**
+     * Open a server socket on the given port.
+     * <p>
+     * This roughly corresponds to using new ServerSocket(port, backlog);
+     * <p>
+     * <em>This method is thread-safe.</em>
+     *
+     * @param port the port to open.
+     * @param backlog the maximum connection backlog (i.e. connections pending accept)
+     * @return a NIOServerSocket for asynchronous connection to the server socket.
+     * @throws IOException if registering the socket fails.
+     */
+    public NIOServerSocket openServerSocket(int port, int backlog) throws IOException
+    {
+        return openServerSocket(new InetSocketAddress(port), backlog);
+    }
+
+    /**
+     * Open an SSL server socket on the given port.
+     * <p>
+     * This roughly corresponds to using new SSLServerSocket(port, backlog);
+     * <p>
+     * <em>This method is thread-safe.</em>
+     *
+     * @param sslContext the SSLContext to use for SSL-negotiation.
+     * @param port the port to open.
+     * @param backlog the maximum connection backlog (i.e. connections pending accept)
+     * @return a NIOServerSocket for asynchronous connection to the server socket.
+     * @throws IOException if registering the socket fails.
+     */
+    public NIOServerSocketSSL openSSLServerSocket(SSLContext sslContext, int port, int backlog) throws IOException
+    {
+        return openSSLServerSocket(sslContext, new InetSocketAddress(port), backlog);
+    }
 
 	/**
 	 * Open a server socket on the given port with the default connection backlog.
@@ -241,27 +259,66 @@ public class NIOService
 		return openServerSocket(port, -1);
 	}
 
+    /**
+     * Open an SSL server socket on the given port with the default connection backlog.
+     * <p>
+     * This roughly corresponds to using new SSLServerSocket(port);
+     * <p>
+     * <em>This method is thread-safe.</em>
+     *
+     * @param sslContext the SSLContext to use for SSL-negotiation.
+     * @param port the port to open.
+     * @return a NIOServerSocket for asynchronous connection to the server socket.
+     * @throws IOException if registering the socket fails.
+     */
+    public NIOServerSocketSSL openSSLServerSocket(SSLContext sslContext, int port) throws IOException
+    {
+        return openSSLServerSocket(sslContext, port, -1);
+    }
+
 	/**
-	 * Open a server socket on the address.
+	 * Open an SSL server socket on the address.
 	 * <p>
 	 * <em>This method is thread-safe.</em>
 	 *
+     * @param sslContext the SSLContext to use for SSL-negotiation.
 	 * @param address the address to open.
 	 * @param backlog the maximum connection backlog (i.e. connections pending accept)
 	 * @return a NIOServerSocket for asynchronous connection to the server socket.
 	 * @throws IOException if registering the socket fails.
 	 */
-	public NIOServerSocket openServerSocket(InetSocketAddress address, int backlog) throws IOException
+	public NIOServerSocketSSL openSSLServerSocket(SSLContext sslContext, InetSocketAddress address, int backlog) throws IOException
 	{
 		ServerSocketChannel channel = ServerSocketChannel.open();
 		channel.socket().setReuseAddress(true);
 		channel.socket().bind(address, backlog);
 		channel.configureBlocking(false);
-		ServerSocketChannelResponder channelResponder = new ServerSocketChannelResponder(this, channel, address);
+		SSLServerSocketChannelResponder channelResponder = new SSLServerSocketChannelResponder(sslContext, this, channel, address);
 		queue(new RegisterChannelEvent(channelResponder));
 		return channelResponder;
 	}
 
+
+    /**
+     * Open a server socket on the address.
+     * <p>
+     * <em>This method is thread-safe.</em>
+     *
+     * @param address the address to open.
+     * @param backlog the maximum connection backlog (i.e. connections pending accept)
+     * @return a NIOServerSocket for asynchronous connection to the server socket.
+     * @throws IOException if registering the socket fails.
+     */
+    public NIOServerSocket openServerSocket(InetSocketAddress address, int backlog) throws IOException
+    {
+        ServerSocketChannel channel = ServerSocketChannel.open();
+        channel.socket().setReuseAddress(true);
+        channel.socket().bind(address, backlog);
+        channel.configureBlocking(false);
+        ServerSocketChannelResponder channelResponder = new ServerSocketChannelResponder(this, channel, address);
+        queue(new RegisterChannelEvent(channelResponder));
+        return channelResponder;
+    }
 
 	/**
 	 * Internal method to mark a socket channel for pending registration
@@ -442,7 +499,7 @@ public class NIOService
 		m_selector.wakeup();
 	}
 
-	/**
+    /**
 	 * A registration class to let registrations occur on the NIOService thread.
 	 */
 	private class RegisterChannelEvent implements Runnable

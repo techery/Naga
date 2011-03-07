@@ -43,6 +43,18 @@ class ServerSocketChannelResponder extends ChannelResponder implements NIOServer
 		return (ServerSocketChannel) super.getChannel();
 	}
 
+    /**
+     * Override point for substituting NIOSocket wrappers.
+     *
+     * @param channel the channel to register.
+     * @param address the address associated with the channel.
+     * @return A new NIOSocket
+     * @throws IOException if registration failed.
+     */
+    NIOSocket registerSocket(SocketChannel channel, InetSocketAddress address) throws IOException
+    {
+        return getNIOService().registerSocketChannel(channel, address);
+    }
 	/**
 	 * Callback to tell the object that there is at least one accept that can be done on the server socket.
 	 */
@@ -71,7 +83,7 @@ class ServerSocketChannelResponder extends ChannelResponder implements NIOServer
 				return;
 			}
 
-			m_observer.newConnection(getNIOService().registerSocketChannel(socketChannel, address));
+            m_observer.newConnection(registerSocket(socketChannel, address));
 			m_totalAcceptedConnections++;
 		}
 		catch (IOException e)
