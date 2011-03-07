@@ -5,6 +5,9 @@ package naga.packetwriter;
 
 import junit.framework.TestCase;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+
 public class RegularPacketWriterTest extends TestCase
 {
 	RegularPacketWriter m_regularPacketWriter;
@@ -12,39 +15,21 @@ public class RegularPacketWriterTest extends TestCase
 	public void testRegularPacketWriter() throws Exception
 	{
 		m_regularPacketWriter = new RegularPacketWriter(3, true);
-		m_regularPacketWriter.setPacket("Foo!".getBytes());
-		assertEquals(false, m_regularPacketWriter.isEmpty());
-		assertEquals(0, m_regularPacketWriter.getBuffer().get());
-		assertEquals(0, m_regularPacketWriter.getBuffer().get());
-		assertEquals(4, m_regularPacketWriter.getBuffer().get());
-		byte[] buffer = new byte[4];
-		m_regularPacketWriter.getBuffer().get(buffer);
-		assertEquals(true, m_regularPacketWriter.isEmpty());
-		assertEquals("Foo!", new String(buffer));
-
-		m_regularPacketWriter = new RegularPacketWriter(3, true);
-		m_regularPacketWriter.setPacket(new byte[0]);
-		assertEquals(false, m_regularPacketWriter.isEmpty());
-		assertEquals(0, m_regularPacketWriter.getBuffer().get());
-		assertEquals(0, m_regularPacketWriter.getBuffer().get());
-		assertEquals(0, m_regularPacketWriter.getBuffer().get());
-		assertEquals(true, m_regularPacketWriter.isEmpty());
-		assertEquals(false, m_regularPacketWriter.getBuffer().hasRemaining());
+        ByteBuffer[] result = m_regularPacketWriter.write(ByteBuffer.wrap("Foo!".getBytes()));
+        assertEquals("[0, 0, 4]", Arrays.toString(result[0].array()));
+        assertEquals("[70, 111, 111, 33]", Arrays.toString(result[1].array()));
+        assertEquals(2, result.length);
+        assertEquals("[0, 0, 0]", Arrays.toString(m_regularPacketWriter.write(ByteBuffer.allocate(0))[0].array()));
 	}
 
     // See Bug 5
     public void testFourByteHeader() throws Exception
     {
         m_regularPacketWriter = new RegularPacketWriter(4, true);
-        m_regularPacketWriter.setPacket("Foo!".getBytes());
-        assertEquals(false, m_regularPacketWriter.isEmpty());
-        assertEquals(0, m_regularPacketWriter.getBuffer().get());
-        assertEquals(0, m_regularPacketWriter.getBuffer().get());
-        assertEquals(0, m_regularPacketWriter.getBuffer().get());
-        assertEquals(4, m_regularPacketWriter.getBuffer().get());
-        byte[] buffer = new byte[4];
-        m_regularPacketWriter.getBuffer().get(buffer);
-        assertEquals(true, m_regularPacketWriter.isEmpty());
-        assertEquals("Foo!", new String(buffer));
+        ByteBuffer[] result =  m_regularPacketWriter.write(ByteBuffer.wrap("Foo!".getBytes()));
+        assertEquals("[0, 0, 0, 4]", Arrays.toString(result[0].array()));
+        assertEquals("[70, 111, 111, 33]", Arrays.toString(result[1].array()));
+        assertEquals(2, result.length);
+        assertEquals("[0, 0, 0, 0]", Arrays.toString(m_regularPacketWriter.write(ByteBuffer.allocate(0))[0].array()));
     }
 }

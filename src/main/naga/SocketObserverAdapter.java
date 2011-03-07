@@ -20,4 +20,8 @@ public class SocketObserverAdapter implements SocketObserver
 	public void connectionOpened(NIOSocket nioSocket)
 	{
 	}
+
+    public void packetSent(NIOSocket socket, Object tag)
+    {
+    }
 }

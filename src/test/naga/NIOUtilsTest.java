@@ -25,19 +25,22 @@ public class NIOUtilsTest extends TestCase
 		             NIOUtils.getPacketSizeFromByteBuffer(ByteBuffer.wrap(new byte[]{(byte) 0xFF,
 		                                                                             0x00,
 		                                                                             (byte) 0xFE}),
-		                                                  true));
+		                                                  3,
+                                                          true));
 		assertEquals(0xFF00FE,
 		             NIOUtils.getPacketSizeFromByteBuffer(ByteBuffer.wrap(new byte[]{(byte) 0xFE,
 		                                                                             0x00,
 		                                                                             (byte) 0xFF}),
-		                                                  false));
+		                                                  3,
+                                                          false));
 	}
 
-	public void testGetByteBufferFromPacketSizeTooBig()
+	public void testSetPacketSizeInByteBufferTooBig()
 	{
+        ByteBuffer buffer = ByteBuffer.allocate(10);
 		try
 		{
-			NIOUtils.getByteBufferFromPacketSize(3, -1, true);
+			NIOUtils.setPacketSizeInByteBuffer(buffer, 3, -1, true);
 			fail();
 		}
 		catch (IllegalArgumentException e)
@@ -46,7 +49,7 @@ public class NIOUtilsTest extends TestCase
 		}
 		try
 		{
-			NIOUtils.getByteBufferFromPacketSize(3, 0xFFFFFF + 1, true);
+			NIOUtils.setPacketSizeInByteBuffer(buffer, 3, 0xFFFFFF + 1, true);
 			fail("Should throw exception");
 		}
 		catch (IllegalArgumentException e)
@@ -55,7 +58,7 @@ public class NIOUtilsTest extends TestCase
 		}
 		try
 		{
-			NIOUtils.getByteBufferFromPacketSize(1, 0xFF + 1, true);
+			NIOUtils.setPacketSizeInByteBuffer(buffer, 1, 0xFF + 1, true);
 			fail("Payload size cannot be encoded into 3 byte(s).");
 		}
 		catch (IllegalArgumentException e)
@@ -64,33 +67,42 @@ public class NIOUtilsTest extends TestCase
 		}
 	}
 
-	public void testGetByteBufferFromPacketSize() throws Exception
+	public void testSetPacketSizeInByteBuffer() throws Exception
 	{
+        ByteBuffer buffer = ByteBuffer.allocate(10);
 		getByteBufferFromPacketSizeTests(true);
 		getByteBufferFromPacketSizeTests(false);
-		assertEquals(0xFF,
-		             NIOUtils.getPacketSizeFromByteBuffer(NIOUtils.getByteBufferFromPacketSize(1, 0xFF, true), false));
-		assertEquals(0x00,
-		             NIOUtils.getPacketSizeFromByteBuffer(NIOUtils.getByteBufferFromPacketSize(3, 0x00, false), true));
+        NIOUtils.setPacketSizeInByteBuffer(buffer, 1, 0xFF, true);
+        buffer.flip();
+		assertEquals(0xFF, NIOUtils.getPacketSizeFromByteBuffer(buffer, 1, false));
+        buffer.clear();
+        NIOUtils.setPacketSizeInByteBuffer(buffer, 3, 0x00, false);
+        buffer.flip();
+		assertEquals(0x00, NIOUtils.getPacketSizeFromByteBuffer(buffer, 3, true));
 	}
 
 	private void getByteBufferFromPacketSizeTests(boolean endian)
 	{
-		assertEquals(0xFFFFFF,
-		             NIOUtils.getPacketSizeFromByteBuffer(NIOUtils.getByteBufferFromPacketSize(3, 0xFFFFFF, endian),
-		                                                  endian));
-		assertEquals(0x000000,
-		             NIOUtils.getPacketSizeFromByteBuffer(NIOUtils.getByteBufferFromPacketSize(3, 0x000000, endian),
-		                                                  endian));
-		assertEquals(0xFFFFFE,
-		             NIOUtils.getPacketSizeFromByteBuffer(NIOUtils.getByteBufferFromPacketSize(3, 0xFFFFFE, endian),
-		                                                  endian));
-        assertEquals(Integer.MAX_VALUE,
-                     NIOUtils.getPacketSizeFromByteBuffer(NIOUtils.getByteBufferFromPacketSize(4, Integer.MAX_VALUE, endian),
-                                                          endian));
-        assertEquals(0x00000000,
-                     NIOUtils.getPacketSizeFromByteBuffer(NIOUtils.getByteBufferFromPacketSize(4, 0x00000000, endian),
-                                                          endian));
+        ByteBuffer buffer = ByteBuffer.allocate(10);
+        NIOUtils.setPacketSizeInByteBuffer(buffer, 3, 0xFFFFFF, endian);
+        buffer.flip();
+		assertEquals(0xFFFFFF, NIOUtils.getPacketSizeFromByteBuffer(buffer, 3, endian));
+        buffer.clear();
+        NIOUtils.setPacketSizeInByteBuffer(buffer, 3, 0x000000, endian);
+        buffer.flip();
+		assertEquals(0x000000, NIOUtils.getPacketSizeFromByteBuffer(buffer, 3, endian));
+        buffer.clear();
+        NIOUtils.setPacketSizeInByteBuffer(buffer, 3, 0xFFFFFE, endian);
+        buffer.flip();
+		assertEquals(0xFFFFFE, NIOUtils.getPacketSizeFromByteBuffer(buffer, 3, endian));
+        buffer.clear();
+        NIOUtils.setPacketSizeInByteBuffer(buffer, 4, Integer.MAX_VALUE, endian);
+        buffer.flip();
+        assertEquals(Integer.MAX_VALUE, NIOUtils.getPacketSizeFromByteBuffer(buffer, 4, endian));
+        buffer.clear();
+        NIOUtils.setPacketSizeInByteBuffer(buffer, 4, 0x00000000, endian);
+        buffer.flip();
+        assertEquals(0x00000000, NIOUtils.getPacketSizeFromByteBuffer(buffer, 4, endian));
 	}
 
 	public void testCancelKeySilently() throws Exception

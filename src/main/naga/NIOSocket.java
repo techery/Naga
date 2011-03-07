@@ -13,6 +13,7 @@ import java.net.Socket;
  */
 public interface NIOSocket extends NIOAbstractSocket
 {
+
 	/**
 	 * Write a packet of bytes asynchronously on this socket.
 	 * <p>
@@ -28,6 +29,23 @@ public interface NIOSocket extends NIOAbstractSocket
 	 * was reached and the packet was thrown away.
 	 */
 	boolean write(byte[] packet);
+
+    /**
+     * Write a packet of bytes asynchronously on this socket.
+     * <p>
+     * The bytes will be sent to the PacketWriter belonging to this
+     * socket for dispatch. However, if the queue is full (i.e. the new
+     * queue size would exceed <code>getMaxQueueSize()</code>),
+     * the packet is discarded and the method returns false.
+     * <p>
+     * <em>This method is thread-safe.</em>
+     *
+     * @param packet the packet to send.
+     * @param tag an optional tag to tag the packet (used in {@link naga.SocketObserver#packetSent(NIOSocket, Object)}).
+     * @return true if the packet was queued, false if the queue limit
+     * was reached and the packet was thrown away.
+     */
+    boolean write(byte[] packet, Object tag);
 
     /**
      * Queue a runnable in the packet queue. This runnable will execute

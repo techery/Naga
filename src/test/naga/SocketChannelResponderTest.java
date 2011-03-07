@@ -72,8 +72,6 @@ public class SocketChannelResponderTest extends TestCase
 		reset();
         EasyMock.expect(m_key.interestOps()).andReturn(4).atLeastOnce();
         EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).atLeastOnce();
-
-        EasyMock.expect(writer.isEmpty()).andReturn(true).once();
         EasyMock.replay(writer);
         replay();
 
@@ -97,17 +95,15 @@ public class SocketChannelResponderTest extends TestCase
 
 		verify();
 		reset();
-        
+
+        ByteBuffer buffer = ByteBuffer.wrap(packet);
+        ByteBuffer[] bufferArray = new ByteBuffer[] { buffer };
 		// Write nothing of the packet.
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
 		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_WRITE)).andReturn(m_key).once();
-		EasyMock.expect(m_channel.write((ByteBuffer) null)).andReturn(0).once();
-		EasyMock.expect(writer.isEmpty()).andReturn(true).once();
-		EasyMock.expect(writer.isEmpty()).andReturn(false).times(2);
-		EasyMock.expect(writer.getBuffer()).andReturn(null).once();
-		writer.setPacket(packet);
-		EasyMock.expectLastCall().once();
+		EasyMock.expect(m_channel.write(bufferArray)).andReturn(0L).once();
+        EasyMock.expect(writer.write(buffer)).andReturn(bufferArray).once();
 
 		replay();
 		EasyMock.replay(writer);
@@ -126,10 +122,8 @@ public class SocketChannelResponderTest extends TestCase
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_WRITE)).andReturn(m_key).once();
 		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
-		EasyMock.expect(m_channel.write((ByteBuffer) null)).andReturn(3).once();
-		EasyMock.expect(m_channel.write((ByteBuffer) null)).andReturn(0).once();
-		EasyMock.expect(writer.isEmpty()).andReturn(false).times(5);
-		EasyMock.expect(writer.getBuffer()).andReturn(null).times(2);
+		EasyMock.expect(m_channel.write(bufferArray)).andReturn(3L).once();
+		EasyMock.expect(m_channel.write(bufferArray)).andReturn(0L).once();
 		replay();
 		EasyMock.replay(writer);
 
@@ -143,13 +137,11 @@ public class SocketChannelResponderTest extends TestCase
 		verify();
 		reset();
 
+        buffer.flip();
 		// Finish writing the packet.
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
-		EasyMock.expect(m_channel.write((ByteBuffer) null)).andReturn(1).once();
+		EasyMock.expect(m_channel.write(bufferArray)).andReturn(1L).once();
 		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
-		EasyMock.expect(writer.isEmpty()).andReturn(false).times(3);
-		EasyMock.expect(writer.isEmpty()).andReturn(true).times(3);
-		EasyMock.expect(writer.getBuffer()).andReturn(null).times(1);
 		replay();
 		EasyMock.replay(writer);
 
@@ -165,7 +157,7 @@ public class SocketChannelResponderTest extends TestCase
 		// Test Empty read
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
 		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
-		EasyMock.expect(writer.isEmpty()).andReturn(true).times(2);
+//		EasyMock.expect(writer.isEmpty()).andReturn(true).times(2);
 		replay();
 		EasyMock.replay(writer);
 

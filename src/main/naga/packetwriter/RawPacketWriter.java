@@ -14,28 +14,14 @@ import java.nio.ByteBuffer;
  */
 public class RawPacketWriter implements PacketWriter
 {
-	private ByteBuffer m_buffer;
+    public static RawPacketWriter INSTANCE = new RawPacketWriter();
+    
+    private RawPacketWriter()
+    {
+    }
 
-	/**
-	 * Creates a new writer.
-	 */
-	public RawPacketWriter()
-	{
-		m_buffer = null;
-	}
-
-	public void setPacket(byte[] bytes)
-	{
-		m_buffer = ByteBuffer.wrap(bytes);
-	}
-
-	public ByteBuffer getBuffer()
-	{
-		return m_buffer;
-	}
-
-	public boolean isEmpty()
-	{
-		return m_buffer == null || !m_buffer.hasRemaining();
-	}
+    public ByteBuffer[] write(ByteBuffer[] byteBuffers)
+    {
+        return byteBuffers;
+    }
 }

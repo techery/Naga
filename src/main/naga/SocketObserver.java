@@ -55,4 +55,16 @@ public interface SocketObserver
 	 * @param packet the packet we received.
 	 */
 	void packetReceived(NIOSocket socket, byte[] packet);
+
+    /**
+     * Called by the NIOService on the NIO thread when a packet has finished writing.
+     * <p>
+     * <b>Note: Since this is a direct callback on the NIO thread, this method will suspend IO on
+     * all other connections until the method returns. It is therefore strongly recommended
+     * that the implementation of this method returns as quickly as possible to avoid blocking IO.</b>
+     *
+     * @param socket the socket we sent the packet on.
+     * @param tag the (optional) tag associated with the packet.
+     */
+    void packetSent(NIOSocket socket, Object tag);
 }

@@ -13,23 +13,14 @@ public class DelimiterPacketReaderTest extends TestCase
 	{
 		try
 		{
-			new DelimiterPacketReader((byte)0, 0, 1);
+			new DelimiterPacketReader((byte)0, 0);
 			fail();
 		}
 		catch (IllegalArgumentException e)
 		{
-			assertEquals("Min buffer must at least be 1 byte.", e.getMessage());
+			assertEquals("Max packet size must be larger that 1, was: 0", e.getMessage());
 		}
-		try
-		{
-			new DelimiterPacketReader((byte)0, 1, 0);
-			fail();
-		}
-		catch (IllegalArgumentException e)
-		{
-			assertEquals("Read buffer cannot be be larger than the max packet size.", e.getMessage());
-		}
-		m_delimiterPacketReader = new DelimiterPacketReader((byte)0, 1, 20);
+		m_delimiterPacketReader = new DelimiterPacketReader((byte)0, 20);
 		assertEquals(20, m_delimiterPacketReader.getMaxPacketSize());
 		m_delimiterPacketReader.setMaxPacketSize(19);
 		assertEquals(19, m_delimiterPacketReader.getMaxPacketSize());

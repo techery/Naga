@@ -66,7 +66,12 @@ public class ValidationClient
 					nioSocket.write(content);
 				}
 
-				public void packetReceived(NIOSocket socket, byte[] packet)
+                public void packetSent(NIOSocket socket, Object tag)
+                {
+                    System.out.println("Packet sent");
+                }
+
+                public void packetReceived(NIOSocket socket, byte[] packet)
 				{
 					try
 					{

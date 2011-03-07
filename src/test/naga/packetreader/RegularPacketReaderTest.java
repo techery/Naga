@@ -4,29 +4,25 @@ package naga.packetreader;
  */
 
 import junit.framework.TestCase;
-import naga.exception.ProtocolViolationException;
+
+import java.nio.ByteBuffer;
 
 public class RegularPacketReaderTest extends TestCase
 {
 	RegularPacketReader m_regularPacketReader;
 
-    private void putData(byte[] data) throws ProtocolViolationException
-    {
-        m_regularPacketReader.prepareBuffer();
-        m_regularPacketReader.getBuffer().put(data);
-        m_regularPacketReader.readFinished();
-    }
 	public void testRegularPacketReader() throws Exception
 	{
 		m_regularPacketReader = new RegularPacketReader(3, true);
-        putData(new byte[] { 0, 0, 4 });
-		assertEquals(null, m_regularPacketReader.getNextPacket());
-        putData("Foo!".getBytes());
-		assertEquals("Foo!", new String(m_regularPacketReader.getNextPacket()));
-
+        ByteBuffer byteBuffer = ByteBuffer.wrap(new byte[] { 0, 0, 3 });
+        assertEquals(null, m_regularPacketReader.nextPacket(byteBuffer));
+        assertEquals(3, byteBuffer.remaining());
+        byteBuffer = ByteBuffer.wrap(new byte[] { 0, 0, 3, 65, 66, 67, 68});
+        assertEquals("ABC", new String(m_regularPacketReader.nextPacket(byteBuffer)));
+        assertEquals(1, byteBuffer.remaining());
 		m_regularPacketReader = new RegularPacketReader(3, true);
-        putData(new byte[] { 0, 0, 0 });
-		assertEquals("", new String(m_regularPacketReader.getNextPacket()));
+        byteBuffer = ByteBuffer.wrap(new byte[] { 0, 0, 0 });
+        assertEquals("", new String(m_regularPacketReader.nextPacket(byteBuffer)));
 
 	}
 }

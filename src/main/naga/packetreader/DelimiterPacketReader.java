@@ -18,10 +18,7 @@ import java.nio.ByteBuffer;
  */
 public class DelimiterPacketReader implements PacketReader
 {
-	public final static int DEFAULT_READ_BUFFER_SIZE = 256;
-	private ByteBuffer m_currentBuffer;
 	private volatile int m_maxPacketSize;
-	private byte[] m_buffer;
 	private byte m_delimiter;
 
 	/**
@@ -31,7 +28,7 @@ public class DelimiterPacketReader implements PacketReader
 	 */
 	public DelimiterPacketReader(byte delimiter)
 	{
-		this(delimiter, DEFAULT_READ_BUFFER_SIZE, -1);
+		this(delimiter, -1);
 	}
 
 	/**
@@ -39,23 +36,16 @@ public class DelimiterPacketReader implements PacketReader
 	 * delimited by the given byte.
 	 *
 	 * @param delimiter the byte value of the delimiter.
-	 * @param readBufferSize the size of the read buffer (i.e. how many
-	 * bytes are read in a single pass) - this only has effect on read
-	 * efficiency and memory requirements.
-	 * @param maxPacketSize the maximum number of bytes read before throwing a
-	 * ProtocolException. -1 means the packet has no size limit.
-	 * @throws IllegalArgumentException if maxPacketSize < readBufferSize or if
-	 * readBufferSize < 1.
+	 * @param maxPacketSize the maximum number of bytes read before throwing an
+	 * IOException. -1 means the packet has no size limit.
+	 * @throws IllegalArgumentException if maxPacketSize < 1
 	 */
-	public DelimiterPacketReader(byte delimiter, int readBufferSize, int maxPacketSize)
+	public DelimiterPacketReader(byte delimiter, int maxPacketSize)
 	{
-		if (readBufferSize < 1) throw new IllegalArgumentException("Min buffer must at least be 1 byte.");
-		if (maxPacketSize > -1 && readBufferSize > maxPacketSize)
+		if (maxPacketSize < 1 && maxPacketSize != -1)
 		{
-			throw new IllegalArgumentException("Read buffer cannot be be larger than the max packet size.");
+			throw new IllegalArgumentException("Max packet size must be larger that 1, was: " + maxPacketSize);
 		}
-		m_currentBuffer = ByteBuffer.allocate(readBufferSize);
-		m_buffer = null;
 		m_delimiter = delimiter;
 		m_maxPacketSize = maxPacketSize;
 	}
@@ -83,63 +73,27 @@ public class DelimiterPacketReader implements PacketReader
 		m_maxPacketSize = maxPacketSize;
 	}
 
-    /**
-	 * Prepare the byte buffer by checking that the buffer isn't already full.
-	 *
-	 * @throws ProtocolViolationException if the internal buffer already exceeds the maximum size.
-	 */
-    public void prepareBuffer() throws ProtocolViolationException
+    @SuppressWarnings({"ResultOfMethodCallIgnored"})
+    public byte[] nextPacket(ByteBuffer byteBuffer) throws ProtocolViolationException
     {
-        if (m_maxPacketSize > -1 && m_buffer != null && m_buffer.length > m_maxPacketSize)
+        byteBuffer.mark();
+        int bytesRead = 0;
+        while (byteBuffer.remaining() > 0)
         {
-            throw new ProtocolViolationException("Packet size exceeds " + m_maxPacketSize);
-        }
-    }
-
-	public ByteBuffer getBuffer()
-	{
-		return m_currentBuffer;
-	}
-
-    public void readFinished()
-    {
-        if (m_currentBuffer.position() > 0)
-        {
-            m_currentBuffer.flip();
-            int oldBufferLength = m_buffer == null ? 0 : m_buffer.length;
-            byte[] newBuffer = new byte[oldBufferLength + m_currentBuffer.remaining()];
-            if (m_buffer != null)
+            int ch = byteBuffer.get();
+            if (ch == m_delimiter)
             {
-                System.arraycopy(m_buffer, 0, newBuffer, 0, m_buffer.length);
+                byte[] packet = new byte[bytesRead];
+                byteBuffer.reset();
+                byteBuffer.get(packet);
+                byteBuffer.get();
+                return packet;
             }
-            m_currentBuffer.get(newBuffer, oldBufferLength, m_currentBuffer.remaining());
-            m_currentBuffer.clear();
-            m_buffer = newBuffer;
+            bytesRead++;
+            if (m_maxPacketSize > 0 && bytesRead > m_maxPacketSize) throw new ProtocolViolationException("Packet exceeds max " + m_maxPacketSize);
         }
+        byteBuffer.reset();
+        return null;
     }
 
-    public byte[] getNextPacket() throws ProtocolViolationException
-	{
-		if (m_buffer == null) return null;
-		for (int i = 0; i < m_buffer.length; i++)
-		{
-			if (m_buffer[i] == m_delimiter)
-			{
-				byte[] packet = new byte[i];
-				System.arraycopy(m_buffer, 0, packet, 0, i);
-				if (i > m_buffer.length - 2)
-				{
-					m_buffer = null;
-				}
-				else
-				{
-					byte[] newBuffer = new byte[m_buffer.length - i - 1];
-					System.arraycopy(m_buffer, i + 1, newBuffer, 0, newBuffer.length);
-					m_buffer = newBuffer;
-				}
-				return packet;
-			}
-		}
-		return null;
-	}
 }

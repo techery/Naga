@@ -38,7 +38,7 @@ public class EchoServer
 					{
 						public void packetReceived(NIOSocket socket, byte[] packet)
 						{
-							socket.write(packet);
+                         	socket.write(packet);
 						}
 
 						public void connectionBroken(NIOSocket nioSocket, Exception exception)

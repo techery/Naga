@@ -1,8 +1,13 @@
 package naga;
 
+import naga.ssl.NIOSocketSSL;
+import naga.ssl.SSLSocketChannelResponder;
+
+import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -44,9 +49,12 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  */
 public class NIOService
 {
+    public final static int DEFAULT_IO_BUFFER_SIZE = 64 * 1024;
+
 	/** The selector used by this service */
 	private final Selector m_selector;
 	private final Queue<Runnable> m_internalEventQueue;
+    private ByteBuffer m_sharedBuffer;
 
 	/**
 	 * Create a new nio service.
@@ -58,6 +66,7 @@ public class NIOService
 	{
 		m_selector = Selector.open();
 		m_internalEventQueue = new ConcurrentLinkedQueue<Runnable>();
+        m_sharedBuffer = ByteBuffer.allocate(DEFAULT_IO_BUFFER_SIZE);
 	}
 
 	/**
@@ -135,6 +144,25 @@ public class NIOService
 		return openSocket(InetAddress.getByName(host), port);
 	}
 
+    /**
+     * Open a socket to the host on the given port returning
+     * a NIOSocketSSL.
+     * <p>
+     * This roughly corresponds to creating a regular socket using new SSLSocket(host, port).
+     * <p>
+     * <em>This method is thread-safe.</em>
+     *
+     * @param sslEngine the SSL engine to use for SSL-negotiation.
+     * @param host the host we want to connect to.
+     * @param port the port to use for the connection.
+     * @return a NIOSocket object for asynchronous communication.
+     * @throws IOException if registering the new socket failed.
+     */
+    public NIOSocket openSSLSocket(SSLEngine sslEngine, String host, int port) throws IOException
+    {
+        return openSSLSocket(sslEngine, InetAddress.getByName(host), port);
+    }
+
 	/**
 	 * Open a normal socket to the host on the given port returning
 	 * a NIOSocket.
@@ -156,6 +184,29 @@ public class NIOService
 		channel.connect(address);
 		return registerSocketChannel(channel, address);
 	}
+
+    /**
+     * Open a socket to the host on the given port returning
+     * a NIOSocketSSL.
+     * <p>
+     * This roughly corresponds to creating a regular socket using new SSLSocket(inetAddress, port).
+     * <p>
+     * <em>This method is thread-safe.</em>
+     *
+     * @param sslEngine the SSL engine to use for SSL-negotiation.
+     * @param inetAddress the address we want to connect to.
+     * @param port the port to use for the connection.
+     * @return a NIOSocketSSL object for asynchronous communication.
+     * @throws IOException if registering the new socket failed.
+     */
+    public NIOSocketSSL openSSLSocket(SSLEngine sslEngine, InetAddress inetAddress, int port) throws IOException
+    {
+        SocketChannel channel = SocketChannel.open();
+        channel.configureBlocking(false);
+        InetSocketAddress address = new InetSocketAddress(inetAddress, port);
+        channel.connect(address);
+        return new SSLSocketChannelResponder(registerSocketChannel(channel, address), sslEngine, true);
+    }
 
 	/**
 	 * Open a server socket on the given port.
@@ -270,8 +321,31 @@ public class NIOService
 		}
 	}
 
+    /**
+     * Set the new shared buffer size.
+     * <p>
+     * <em>This method is *not* thread-safe.</em>
+     * @param newBufferSize the new buffer size.
+     * @throws IllegalArgumentException if the new size is less than 256 bytes.
+     */
+    public void setBufferSize(int newBufferSize)
+    {
+        if (newBufferSize < 256) throw new IllegalArgumentException("The buffer must at least hold 256 bytes");
+        m_sharedBuffer = ByteBuffer.allocate(newBufferSize);
+    }
 
-	/**
+    /**
+     * Returns the shared byte buffer. This is shared between all users of the service to avoid allocating
+     * a huge number of byte buffers.
+     *
+     * @return the shared byte buffer.
+     */
+    public ByteBuffer getSharedBuffer()
+    {
+        return m_sharedBuffer;
+    }
+
+    /**
 	 * Internal method to handle a SelectionKey that has changed.
 	 * <p>
 	 * Will delegate actual actions to the associated ChannelResponder.
