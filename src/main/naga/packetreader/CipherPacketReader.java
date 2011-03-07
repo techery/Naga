@@ -30,6 +30,16 @@ public class CipherPacketReader implements PacketReader
         m_reader = reader;
     }
 
+    public PacketReader getReader()
+    {
+        return m_reader;
+    }
+
+    public void setReader(PacketReader reader)
+    {
+        m_reader = reader;
+    }
+
     public byte[] nextPacket(ByteBuffer byteBuffer) throws ProtocolViolationException
     {
         if (m_internalBuffer == null)

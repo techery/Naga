@@ -55,17 +55,31 @@ public class NIOService
     private ByteBuffer m_sharedBuffer;
 
 	/**
-	 * Create a new nio service.
+	 * Create a new nio service with default buffer size (64kb)
 	 *
 	 * @throws IOException if we failed to open the underlying selector used by the
 	 * service.
 	 */
 	public NIOService() throws IOException
 	{
+        this(DEFAULT_IO_BUFFER_SIZE);
+	}
+
+    /**
+     * Create a new nio service.
+     *
+     * @param ioBufferSize the maximum buffer size.
+     * @throws IOException if we failed to open the underlying selector used by the
+     * service.
+     * @throws IllegalArgumentException if the buffer size is less than 256 bytes.
+     */
+    public NIOService(int ioBufferSize) throws IOException
+	{
 		m_selector = Selector.open();
 		m_internalEventQueue = new ConcurrentLinkedQueue<Runnable>();
-        m_sharedBuffer = ByteBuffer.allocate(DEFAULT_IO_BUFFER_SIZE);
+        setBufferSize(ioBufferSize);
 	}
+
 
 	/**
 	 * Run all waiting NIO requests, blocking indefinitely
@@ -392,12 +406,25 @@ public class NIOService
     }
 
     /**
+     * Returns the new shared buffer size.
+     * <p/>
+     * <em>This method is *not* thread-safe.</em>
+     *
+     * @return the current buffer size, which is the largest packet that can be read.
+     */
+    public int getBufferSize()
+    {
+        return m_sharedBuffer.capacity();
+    }
+
+
+    /**
      * Returns the shared byte buffer. This is shared between all users of the service to avoid allocating
      * a huge number of byte buffers.
      *
      * @return the shared byte buffer.
      */
-    public ByteBuffer getSharedBuffer()
+    ByteBuffer getSharedBuffer()
     {
         return m_sharedBuffer;
     }
