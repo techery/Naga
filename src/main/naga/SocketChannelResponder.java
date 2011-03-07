@@ -167,7 +167,7 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 				}
 				if (m_socketWriter.isEmpty())
 				{
-                    m_socketObserver.packetSent(this, m_socketWriter.getTag());
+                    if (m_socketObserver != null) m_socketObserver.packetSent(this, m_socketWriter.getTag());
 					fillCurrentOutgoingBuffer();
 				}
 			}

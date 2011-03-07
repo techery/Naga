@@ -4,6 +4,7 @@ package naga;
  */
 
 import junit.framework.TestCase;
+import org.easymock.IAnswer;
 import org.easymock.classextension.EasyMock;
 
 import java.io.IOException;
@@ -96,14 +97,14 @@ public class SocketChannelResponderTest extends TestCase
 		verify();
 		reset();
 
-        ByteBuffer buffer = ByteBuffer.wrap(packet);
+        final ByteBuffer buffer = ByteBuffer.wrap(packet);
         ByteBuffer[] bufferArray = new ByteBuffer[] { buffer };
 		// Write nothing of the packet.
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
 		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_WRITE)).andReturn(m_key).once();
 		EasyMock.expect(m_channel.write(bufferArray)).andReturn(0L).once();
-        EasyMock.expect(writer.write(buffer)).andReturn(bufferArray).once();
+        EasyMock.expect(writer.write((ByteBuffer[])EasyMock.anyObject())).andReturn(bufferArray).once();
 
 		replay();
 		EasyMock.replay(writer);
@@ -122,8 +123,15 @@ public class SocketChannelResponderTest extends TestCase
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
 		EasyMock.expect(m_key.interestOps(SelectionKey.OP_WRITE)).andReturn(m_key).once();
 		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
-		EasyMock.expect(m_channel.write(bufferArray)).andReturn(3L).once();
-		EasyMock.expect(m_channel.write(bufferArray)).andReturn(0L).once();
+		EasyMock.expect(m_channel.write(bufferArray, 0, 1)).andAnswer(new IAnswer<Long>()
+        {
+            public Long answer() throws Throwable
+            {
+                buffer.position(3);
+                return 3L;
+            }
+        }).once();
+		EasyMock.expect(m_channel.write(bufferArray, 0, 1)).andReturn(0L).once();
 		replay();
 		EasyMock.replay(writer);
 
@@ -131,29 +139,37 @@ public class SocketChannelResponderTest extends TestCase
 
 		assertEquals(3, m_socketChannelResponder.getBytesWritten());
 		assertEquals(0, m_socketChannelResponder.getWriteQueueSize());
-
+        assertEquals(1, buffer.remaining());
+        
 		EasyMock.verify(writer);
 		EasyMock.reset(writer);
 		verify();
 		reset();
 
-        buffer.flip();
 		// Finish writing the packet.
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
-		EasyMock.expect(m_channel.write(bufferArray)).andReturn(1L).once();
+		EasyMock.expect(m_channel.write(bufferArray, 0, 1)).andAnswer(new IAnswer<Long>()
+        {
+            public Long answer() throws Throwable
+            {
+                buffer.position(4);
+                return 1L;
+            }
+        }).once();
 		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		replay();
 		EasyMock.replay(writer);
 
 		m_socketChannelResponder.socketReadyForWrite();
-		assertEquals(4, m_socketChannelResponder.getBytesWritten());
-		assertEquals(0, m_socketChannelResponder.getWriteQueueSize());
 
 		EasyMock.verify(writer);
 		EasyMock.reset(writer);
 		verify();
 		reset();
 
+        assertEquals(4, m_socketChannelResponder.getBytesWritten());
+        assertEquals(0, m_socketChannelResponder.getWriteQueueSize());
+        
 		// Test Empty read
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
 		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
