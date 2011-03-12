@@ -11,7 +11,7 @@ import java.nio.channels.SocketChannel;
  *
  * @author Christoffer Lerno
  */
-public class SSLServerSocketChannelResponder extends ServerSocketChannelResponder implements NIOServerSocketSSL
+class SSLServerSocketChannelResponder extends ServerSocketChannelResponder implements NIOServerSocketSSL
 {
     private final SSLContext m_sslContext;
 

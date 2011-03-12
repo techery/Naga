@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author Christoffer Lerno
  */
-public class SSLSocketChannelResponder implements NIOSocketSSL, SocketObserver
+class SSLSocketChannelResponder implements NIOSocketSSL, SocketObserver
 {
     private final NIOSocket m_wrappedSocket;
     private final SSLPacketHandler m_packetHandler;
