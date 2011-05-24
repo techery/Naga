@@ -135,7 +135,7 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
             else
             {
                 data = (byte[])((Object[])nextPacket)[0];
-                tag = ((Object[])nextPacket)[0];
+                tag = ((Object[])nextPacket)[1];
             }
             m_socketWriter.setPacket(data, tag);
             // Remove the space reserved in the queue.
