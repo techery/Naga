@@ -172,6 +172,7 @@ public class EventMachine
 	public synchronized void start()
 	{
 		if (m_runThread != null) throw new IllegalStateException("Service already running.");
+        if (!m_service.isOpen()) throw new IllegalStateException("Service has been shut down.");
 		m_runThread = new Thread()
 		{
 			@Override
@@ -185,7 +186,7 @@ public class EventMachine
 					}
 					catch (Throwable e)
 					{
-						m_observer.notifyExceptionThrown(e);
+						if (m_runThread == this) m_observer.notifyExceptionThrown(e);
 					}
 				}
 			}
@@ -194,7 +195,7 @@ public class EventMachine
 	}
 
 	/**
-	 * Stops the event machine thread.
+	 * Stops the event machine thread, it may be restarted using start()
 	 */
 	public synchronized void stop()
 	{
@@ -202,6 +203,17 @@ public class EventMachine
 		m_runThread = null;
 		m_service.wakeup();
 	}
+
+    /**
+     * Stops the event machine and closes the underlying NIO service, it is not possible to
+     * restart the event machine after shutdown.
+     */
+    public synchronized void shutdown()
+    {
+        if (m_runThread == null) throw new IllegalStateException("The service is not running.");
+        m_service.close();
+        stop();
+    }
 
 	/**
 	 * Run all delayed events, then run select on the NIOService.
@@ -261,9 +273,9 @@ public class EventMachine
 	 *
 	 * @return a copy of the current queue.
 	 */
-	public Queue<DelayedAction> getQueue()
+	public Queue<DelayedEvent> getQueue()
 	{
-		return new PriorityQueue<DelayedAction>(m_queue);
+		return new PriorityQueue<DelayedEvent>(m_queue);
 	}
 
 	/**

@@ -83,7 +83,7 @@ public class EventMachineTest extends TestCase
 		m_eventMachine.executeLater(a, 20000);
 		m_eventMachine.executeLater(b, 30000);
 		m_eventMachine.executeLater(c, 10000);
-		Queue<DelayedAction> actions = m_eventMachine.getQueue();
+		Queue<DelayedEvent> actions = m_eventMachine.getQueue();
 		assertEquals(actions.poll().getCall(), c);
 		assertEquals(actions.poll().getCall(), a);
 		assertEquals(actions.poll().getCall(), b);
@@ -115,7 +115,7 @@ public class EventMachineTest extends TestCase
 		m_eventMachine.executeAt(a, d);
 		m_eventMachine.executeAt(b, d);
 		m_eventMachine.executeAt(c, d);
-		Queue<DelayedAction> actions = m_eventMachine.getQueue();
+		Queue<DelayedEvent> actions = m_eventMachine.getQueue();
 		assertEquals(actions.poll().getCall(), a);
 		assertEquals(actions.poll().getCall(), b);
 		assertEquals(actions.poll().getCall(), c);
