@@ -382,8 +382,6 @@ public class NIOService
 			// Retrieve the key.
 			SelectionKey key = it.next();
 
-			if (key.readyOps() == 0) throw new RuntimeException("Not ready!");
-			
 			// Remove it from the set so that it is not read again.
 			it.remove();
 
