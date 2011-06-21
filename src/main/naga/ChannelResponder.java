@@ -243,7 +243,7 @@ abstract class ChannelResponder implements NIOAbstractSocket
 	/**
 	 * Deleted an interest on a key.
 	 * <p>
-	 * <em>This method is thread-safe.</em>
+	 * This method is called on the NIOService-thread.
 	 *
 	 * @param interest the interest to delete.
 	 */
@@ -256,7 +256,7 @@ abstract class ChannelResponder implements NIOAbstractSocket
 	/**
 	 * Add an interest to the key, or change the currently pending interest.
 	 * <p>
-	 * <em>This method is thread-safe.</em>
+	 * This method is called on the NIOService-thread.
 	 *
 	 * @param interest the interest to add.
 	 */

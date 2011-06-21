@@ -60,7 +60,7 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
     public void queue(Runnable runnable)
     {
         m_packetQueue.offer(runnable);
-        addInterest(SelectionKey.OP_WRITE);
+        getNIOService().queue(new AddInterestEvent(SelectionKey.OP_WRITE));
     }
 
     public boolean write(byte[] packet, Object tag)
@@ -74,7 +74,7 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 
         // Add the packet.
         m_packetQueue.offer(tag == null ? packet : new Object[] { packet, tag });
-        addInterest(SelectionKey.OP_WRITE);
+        getNIOService().queue(new AddInterestEvent(SelectionKey.OP_WRITE));
 
         return true;
     }
@@ -333,6 +333,21 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 		notifyObserverOfDisconnect(e);
 	}
 
+
+    private class AddInterestEvent implements Runnable
+    {
+        private final int m_interest;
+
+        private AddInterestEvent(int interest)
+        {
+            m_interest = interest;
+        }
+
+        public void run()
+        {
+            addInterest(m_interest);
+        }
+    }
 
 	private class BeginListenEvent implements Runnable
 	{

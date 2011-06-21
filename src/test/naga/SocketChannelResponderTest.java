@@ -19,11 +19,13 @@ public class SocketChannelResponderTest extends TestCase
 	SocketChannelResponder m_socketChannelResponder;
 	SelectionKey m_key;
 	SocketChannel m_channel;
+    NIOService m_nioService;
 
 	protected void setUp() throws Exception
 	{
 		m_channel = EasyMock.createMock(SocketChannel.class);
 		m_key = EasyMock.createMock(SelectionKey.class);
+        m_nioService = EasyMock.createMock(NIOService.class);
 	}
 
 	public void testWriteExceedingMax()
@@ -31,8 +33,9 @@ public class SocketChannelResponderTest extends TestCase
 		EasyMock.expect(m_channel.isConnected()).andReturn(true).once();
 		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
 		EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
+
 		replay();
-		m_socketChannelResponder = new SocketChannelResponder(null, m_channel, new InetSocketAddress("localhost", 123));
+		m_socketChannelResponder = new SocketChannelResponder(m_nioService, m_channel, new InetSocketAddress("localhost", 123));
 		m_socketChannelResponder.setKey(m_key);
 		m_socketChannelResponder.setMaxQueueSize(3);
 		assertEquals(0, m_socketChannelResponder.getBytesWritten());
@@ -40,8 +43,8 @@ public class SocketChannelResponderTest extends TestCase
 		verify();
 		reset();
 
-		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
-		EasyMock.expect(m_key.interestOps(SelectionKey.OP_WRITE)).andReturn(m_key).once();
+        m_nioService.queue((Runnable)EasyMock.anyObject());
+        EasyMock.expectLastCall();
 		replay();
 
 		// Add a small packet
@@ -60,10 +63,12 @@ public class SocketChannelResponderTest extends TestCase
 		PacketWriter writer = EasyMock.createMock(PacketWriter.class);
 		EasyMock.expect(m_channel.isConnected()).andReturn(true).once();
         EasyMock.expect(m_key.interestOps(0)).andReturn(m_key).once();
-		EasyMock.expect(m_key.interestOps(4)).andReturn(m_key).once();
 		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
+        m_nioService.queue((Runnable)EasyMock.anyObject());
+        EasyMock.expectLastCall();
+
 		replay();
-		m_socketChannelResponder = new SocketChannelResponder(null, m_channel, new InetSocketAddress("localhost", 123));
+		m_socketChannelResponder = new SocketChannelResponder(m_nioService, m_channel, new InetSocketAddress("localhost", 123));
 		m_socketChannelResponder.setKey(m_key);
 		m_socketChannelResponder.setPacketWriter(writer);
 		assertEquals(0, m_socketChannelResponder.getBytesWritten());
@@ -83,8 +88,8 @@ public class SocketChannelResponderTest extends TestCase
         EasyMock.verify(writer);
         EasyMock.reset(writer);
 
-		EasyMock.expect(m_key.interestOps()).andReturn(0).atLeastOnce();
-		EasyMock.expect(m_key.interestOps(SelectionKey.OP_WRITE)).andReturn(m_key).once();
+	    m_nioService.queue((Runnable)EasyMock.anyObject());
+        EasyMock.expectLastCall();
 		replay();
 
 		// Add a packet
@@ -186,18 +191,21 @@ public class SocketChannelResponderTest extends TestCase
 
 	private void reset()
 	{
+        EasyMock.reset(m_nioService);
 		EasyMock.reset(m_channel);
 		EasyMock.reset(m_key);
 	}
 
 	private void verify()
 	{
+        EasyMock.verify(m_nioService);
 		EasyMock.verify(m_channel);
 		EasyMock.verify(m_key);
 	}
 
 	private void replay()
 	{
+        EasyMock.replay(m_nioService);
 		EasyMock.replay(m_channel);
 		EasyMock.replay(m_key);
 	}
