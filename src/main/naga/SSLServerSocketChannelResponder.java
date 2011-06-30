@@ -14,7 +14,6 @@ import java.nio.channels.SocketChannel;
 class SSLServerSocketChannelResponder extends ServerSocketChannelResponder implements NIOServerSocketSSL
 {
     private final SSLContext m_sslContext;
-
     public SSLServerSocketChannelResponder(SSLContext context, NIOService service, ServerSocketChannel channel, InetSocketAddress address) throws IOException
     {
         super(service, channel, address);
@@ -30,6 +29,6 @@ class SSLServerSocketChannelResponder extends ServerSocketChannelResponder imple
     NIOSocket registerSocket(SocketChannel channel, InetSocketAddress address) throws IOException
     {
         NIOSocket socket = super.registerSocket(channel, address);
-        return new SSLSocketChannelResponder(socket,  m_sslContext.createSSLEngine(), false);
+        return new SSLSocketChannelResponder(getNIOService(), socket,  m_sslContext.createSSLEngine(), false);
     }
 }

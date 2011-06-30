@@ -4,6 +4,7 @@ package naga.eventmachine;
  */
 
 import junit.framework.TestCase;
+import naga.ExceptionObserver;
 
 import java.util.Date;
 import java.util.Queue;
@@ -31,7 +32,6 @@ public class EventMachineTest extends TestCase
 		catch (NullPointerException e)
 		{
 		}
-		assertEquals(ExceptionObserver.DEFAULT, m_eventMachine.getObserver());
 		m_eventMachine.start();
 		m_eventMachine.asyncExecute(new Runnable()
 		{

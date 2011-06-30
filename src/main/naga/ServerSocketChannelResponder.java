@@ -55,6 +55,31 @@ class ServerSocketChannelResponder extends ChannelResponder implements NIOServer
     {
         return getNIOService().registerSocketChannel(channel, address);
     }
+
+    private void notifyNewConnection(NIOSocket socket)
+    {
+        try
+        {
+            if (m_observer != null) m_observer.newConnection(socket);
+        }
+        catch (Exception e)
+        {
+            getNIOService().notifyException(e);
+            socket.close();
+        }
+    }
+
+    private void notifyAcceptFailed(IOException theException)
+    {
+        try
+        {
+            if (m_observer != null) m_observer.acceptFailed(theException);
+        }
+        catch (Exception e)
+        {
+            getNIOService().notifyException(e);
+        }
+    }
 	/**
 	 * Callback to tell the object that there is at least one accept that can be done on the server socket.
 	 */
@@ -82,8 +107,7 @@ class ServerSocketChannelResponder extends ChannelResponder implements NIOServer
 				NIOUtils.closeChannelSilently(socketChannel);
 				return;
 			}
-
-            m_observer.newConnection(registerSocket(socketChannel, address));
+            notifyNewConnection(registerSocket(socketChannel, address));
 			m_totalAcceptedConnections++;
 		}
 		catch (IOException e)
@@ -91,7 +115,7 @@ class ServerSocketChannelResponder extends ChannelResponder implements NIOServer
 			// Close channel in case it opened.
 			NIOUtils.closeChannelSilently(socketChannel);
 			m_totalFailedConnections++;
-			m_observer.acceptFailed(e);
+            notifyAcceptFailed(e);
 		}
 	}
 
@@ -125,17 +149,15 @@ class ServerSocketChannelResponder extends ChannelResponder implements NIOServer
 		m_connectionAcceptor = connectionAcceptor == null ? ConnectionAcceptor.DENY : connectionAcceptor;
 	}
 
-	@SuppressWarnings({"CallToPrintStackTrace"})
 	private void notifyObserverSocketDied(Exception exception)
 	{
-		if (m_observer == null) return;
 		try
 		{
-			m_observer.serverSocketDied(exception);
+			if (m_observer != null) m_observer.serverSocketDied(exception);
 		}
 		catch (Exception e)
 		{
-			e.printStackTrace();
+            getNIOService().notifyException(e);
 		}
 
 	}

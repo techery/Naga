@@ -1,11 +1,10 @@
-package naga.eventmachine;
+package naga;
 
 /**
  * Implemented by observers of event exceptions.
  * <p>
  * The notifyExceptionThrown will be called synchronously
- * by the event machine if executing an event throws
- * an exception.
+ * whn an exception is thrown.
  *
  * @author Christoffer Lerno
  */

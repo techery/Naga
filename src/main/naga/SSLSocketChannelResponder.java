@@ -18,10 +18,12 @@ class SSLSocketChannelResponder implements NIOSocketSSL, SocketObserver
     private final SSLPacketHandler m_packetHandler;
     private final ConcurrentLinkedQueue<Object> m_startQueue;
     private final AtomicBoolean m_isListening;
+    private final NIOService m_nioService;
     private SocketObserver m_observer;
 
-    public SSLSocketChannelResponder(NIOSocket wrappedSocket, SSLEngine engine, boolean client) throws SSLException
+    public SSLSocketChannelResponder(NIOService nioService, NIOSocket wrappedSocket, SSLEngine engine, boolean client) throws SSLException
     {
+        m_nioService = nioService;
         m_wrappedSocket = wrappedSocket;
         m_packetHandler = new SSLPacketHandler(engine, m_wrappedSocket, this);
         m_wrappedSocket.setPacketReader(m_packetHandler);
@@ -200,7 +202,14 @@ class SSLSocketChannelResponder implements NIOSocketSSL, SocketObserver
 
     void closeDueToSSLException(SSLException e)
     {
-        if (m_observer != null) m_observer.connectionBroken(this, e);
+        try
+        {
+            if (m_observer != null) m_observer.connectionBroken(this, e);
+        }
+        catch (Exception ex)
+        {
+            m_nioService.notifyException(e);
+        }
         m_wrappedSocket.close();
     }
 
@@ -218,17 +227,38 @@ class SSLSocketChannelResponder implements NIOSocketSSL, SocketObserver
     
     public void connectionBroken(NIOSocket nioSocket, Exception exception)
     {
-        if (m_observer != null) m_observer.connectionBroken(this, exception);
+        try
+        {
+            if (m_observer != null) m_observer.connectionBroken(this, exception);
+        }
+        catch (Exception e)
+        {
+            m_nioService.notifyException(e);
+        }
     }
 
     public void packetReceived(NIOSocket socket, byte[] packet)
     {
-        if (m_isListening.get() && m_observer != null) m_observer.packetReceived(this, packet);
+        try
+        {
+            if (m_isListening.get() && m_observer != null) m_observer.packetReceived(this, packet);
+        }
+        catch (Exception e)
+        {
+            m_nioService.notifyException(e);
+        }
     }
 
     public void packetSent(NIOSocket socket, Object tag)
     {
-        if (m_isListening.get() && m_observer != null) m_observer.packetSent(this, tag);
+        try
+        {
+            if (m_isListening.get() && m_observer != null) m_observer.packetSent(this, tag);
+        }
+        catch (Exception e)
+        {
+            m_nioService.notifyException(e);
+        }
     }
 
     public void handshakeCompleted()
@@ -236,6 +266,13 @@ class SSLSocketChannelResponder implements NIOSocketSSL, SocketObserver
         emptyStartQueue(true);
         m_isListening.set(true);
         emptyStartQueue(true);
-        if (m_observer != null) m_observer.connectionOpened(this);
+        try
+        {
+            if (m_observer != null) m_observer.connectionOpened(this);
+        }
+        catch (Exception e)
+        {
+            m_nioService.notifyException(e);
+        }
     }
 }

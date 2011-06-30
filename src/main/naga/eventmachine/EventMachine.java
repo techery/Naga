@@ -1,5 +1,6 @@
 package naga.eventmachine;
 
+import naga.ExceptionObserver;
 import naga.NIOService;
 
 import java.io.IOException;
@@ -57,7 +58,6 @@ public class EventMachine
 	private final NIOService m_service;
 	private final Queue<DelayedAction> m_queue;
 	private Thread m_runThread;
-	private volatile ExceptionObserver m_observer;
 
 	/**
 	 * Creates a new EventMachine with an embedded NIOService.
@@ -68,7 +68,6 @@ public class EventMachine
 	{
 		m_service = new NIOService();
 		m_queue = new PriorityBlockingQueue<DelayedAction>();
-		m_observer = ExceptionObserver.DEFAULT;
 		m_runThread = null;
 	}
 
@@ -141,13 +140,11 @@ public class EventMachine
 	 * <p>
 	 * <em>This method is thread-safe.</em>
 	 *
-	 * @param observer the observer to use, may not be null.
-	 * @throws NullPointerException if the observer is null.
+	 * @param observer the observer to use, null will cause exceptions to log to stderr
 	 */
 	public void setObserver(ExceptionObserver observer)
 	{
-		if (observer == null) throw new NullPointerException();
-		m_observer = observer;
+        getNIOService().setExceptionObserver(observer);
 	}
 
 	/**
@@ -186,7 +183,7 @@ public class EventMachine
 					}
 					catch (Throwable e)
 					{
-						if (m_runThread == this) m_observer.notifyExceptionThrown(e);
+						if (m_runThread == this) getNIOService().notifyException(e);
 					}
 				}
 			}
@@ -225,10 +222,17 @@ public class EventMachine
 		// Run queued actions to be called
 		while (timeOfNextEvent() <= System.currentTimeMillis())
 		{
-			runNextAction();
+            try
+            {
+                runNextAction();
+            }
+            catch (Throwable t)
+            {
+                getNIOService().notifyException(t);
+            }
 		}
 		if (timeOfNextEvent() == Long.MAX_VALUE)
-		{
+        {
 			m_service.selectBlocking();
 		}
 		else
@@ -244,18 +248,6 @@ public class EventMachine
 	private void runNextAction()
 	{
 		m_queue.poll().run();
-	}
-
-	/**
-	 * The current ExceptionObserver used by this service.
-	 * <p>
-	 * Will default to ExceptionObserver.DEFAULT if no observer was set.
-	 *
-	 * @return the current ExceptionObserver for this service.
-	 */
-	public ExceptionObserver getObserver()
-	{
-		return m_observer;
 	}
 
 	/**

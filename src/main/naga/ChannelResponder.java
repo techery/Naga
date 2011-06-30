@@ -102,7 +102,7 @@ abstract class ChannelResponder implements NIOAbstractSocket
 	 * Called by the NIOService when the key has read interest ready.
 	 */
 	void socketReadyForRead()
-	{
+    {
 		throw new UnsupportedOperationException(getClass() + " does not support read.");
 	}
 

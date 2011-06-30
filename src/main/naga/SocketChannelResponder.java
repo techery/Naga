@@ -89,8 +89,43 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 		return getChannel().isConnected();
 	}
 
+    /**
+     * Notify the observer that the packet is received, will log to the exception observer on NIOService if an error occurs.
+     *
+     * @param packet the packet received.
+     */
+    private void notifyPacketReceived(byte[] packet)
+    {
+        try
+        {
+            if (m_socketObserver != null) m_socketObserver.packetReceived(this, packet);
+        }
+        catch (Exception e)
+        {
+            getNIOService().notifyException(e);
+        }
+    }
+
+
+    /**
+     * Notify the observer that the packet was sent. Will log to the exception observer on NIOService if an error occurs.
+     *
+     * @param tag the optional tag associated with the packet.
+     */
+    private void notifyPacketSent(Object tag)
+    {
+        try
+        {
+            if (m_socketObserver != null) m_socketObserver.packetSent(this, tag);
+        }
+        catch (Exception e)
+        {
+            getNIOService().notifyException(e);
+        }
+    }
+
 	public void socketReadyForRead()
-	{
+    {
 		if (!isOpen()) return;
 		try
 		{
@@ -103,7 +138,7 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
                        && (packet = m_packetReader.nextPacket(buffer)) != null)
 				{
                     if (packet == PacketReader.SKIP_PACKET) continue;
-					m_socketObserver.packetReceived(this, packet);
+                    notifyPacketReceived(packet);
 				}
                 m_socketReader.compact();
 			}
@@ -167,7 +202,7 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 				}
 				if (m_socketWriter.isEmpty())
 				{
-                    if (m_socketObserver != null) m_socketObserver.packetSent(this, m_socketWriter.getTag());
+                    notifyPacketSent(m_socketWriter.getTag());
 					fillCurrentOutgoingBuffer();
 				}
 			}
@@ -265,42 +300,35 @@ class SocketChannelResponder extends ChannelResponder implements NIOSocket
 	}
 
 	/**
-	 * Notify the observer of our connect,
-	 * swallowing exceptions thrown and logging them to stderr.
-	 */
-	@SuppressWarnings({"CallToPrintStackTrace"})
+     * Notify the observer that the socket connected. Will log to the exception observer on NIOService if an error occurs.
+     *
+     */
 	private void notifyObserverOfConnect()
 	{
-		if (m_socketObserver == null) return;
 		try
 		{
-			m_socketObserver.connectionOpened(this);
+			if (m_socketObserver != null) m_socketObserver.connectionOpened(this);
 		}
 		catch (Exception e)
 		{
-			// We have no way of properly logging this, which is why we log it to stderr
-			e.printStackTrace();
+            getNIOService().notifyException(e);
 		}
 	}
 
 	/**
-	 * Notify the observer of our disconnect,
-	 * swallowing exceptions thrown and logging them to stderr.
+     * Notify the observer of the disconnect. Will log to the exception observer on NIOService if an error occurs.
 	 *
 	 * @param exception the exception causing the disconnect, or null if this was a clean close.
 	 */
-	@SuppressWarnings({"CallToPrintStackTrace"})
 	private void notifyObserverOfDisconnect(Exception exception)
 	{
-		if (m_socketObserver == null) return;
 		try
 		{
-			m_socketObserver.connectionBroken(this, exception);
+			if (m_socketObserver != null) m_socketObserver.connectionBroken(this, exception);
 		}
 		catch (Exception e)
 		{
-			// We have no way of properly logging this, which is why we log it to stderr
-			e.printStackTrace();
+            getNIOService().notifyException(e);
 		}
 	}
 

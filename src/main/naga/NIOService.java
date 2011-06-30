@@ -53,6 +53,7 @@ public class NIOService
 	private final Selector m_selector;
 	private final Queue<Runnable> m_internalEventQueue;
     private ByteBuffer m_sharedBuffer;
+    private ExceptionObserver m_exceptionObserver;
 
 	/**
 	 * Create a new nio service with default buffer size (64kb)
@@ -77,9 +78,9 @@ public class NIOService
 	{
 		m_selector = Selector.open();
 		m_internalEventQueue = new ConcurrentLinkedQueue<Runnable>();
+        m_exceptionObserver = ExceptionObserver.DEFAULT;
         setBufferSize(ioBufferSize);
 	}
-
 
 	/**
 	 * Run all waiting NIO requests, blocking indefinitely
@@ -217,7 +218,7 @@ public class NIOService
         channel.configureBlocking(false);
         InetSocketAddress address = new InetSocketAddress(inetAddress, port);
         channel.connect(address);
-        return new SSLSocketChannelResponder(registerSocketChannel(channel, address), sslEngine, true);
+        return new SSLSocketChannelResponder(this, registerSocketChannel(channel, address), sslEngine, true);
     }
 
 
@@ -363,7 +364,14 @@ public class NIOService
 		Runnable event;
 		while ((event = m_internalEventQueue.poll()) != null)
 		{
-			event.run();
+            try
+            {
+                event.run();
+            }
+            catch (Throwable t)
+            {
+                notifyException(t);
+            }
 		}
 	}
 
@@ -386,7 +394,14 @@ public class NIOService
 			it.remove();
 
 			// Handle actions on this key.
-			handleKey(key);
+            try
+            {
+                handleKey(key);
+            }
+            catch (Throwable t)
+            {
+                notifyException(t);
+            }
 		}
 	}
 
@@ -523,6 +538,43 @@ public class NIOService
 	{
 		m_selector.wakeup();
 	}
+
+    /**
+     * Updates the exception observer for the NIOService.
+     *
+     * @param exceptionObserver the new exception observer, if this is null, logging will be directed to stderr.
+     */
+    public void setExceptionObserver(ExceptionObserver exceptionObserver)
+    {
+        final ExceptionObserver newExceptionObserver = exceptionObserver == null ? ExceptionObserver.DEFAULT : exceptionObserver;
+        queue(new Runnable() {
+            public void run()
+            {
+                m_exceptionObserver = newExceptionObserver;
+            }
+        });
+    }
+
+    /**
+     * Logs an exception using the exception observer. This is mainly for use by the Naga classes.
+     * <p>
+     * Should only be used on the NIOService thread.
+     *
+     * @param t the exception thrown.
+     */
+    public void notifyException(Throwable t)
+    {
+        try
+        {
+            m_exceptionObserver.notifyExceptionThrown(t);
+        }
+        catch (Exception e)
+        {
+            System.err.println("Failed to log the following exception to the exception observer:");
+            System.err.println(e);
+            e.printStackTrace();
+        }
+    }
 
     /**
 	 * A registration class to let registrations occur on the NIOService thread.
