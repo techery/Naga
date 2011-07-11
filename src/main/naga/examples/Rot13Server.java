@@ -2,6 +2,7 @@ package naga.examples;
 
 import naga.*;
 import naga.packetreader.AsciiLinePacketReader;
+import naga.packetwriter.AsciiLinePacketWriter;
 
 import java.io.IOException;
 
@@ -31,8 +32,7 @@ public class Rot13Server
 			// Open the service.
 			NIOService service = new NIOService();
 			NIOServerSocket socket = service.openServerSocket(port);
-			final byte[] welcomeMessage = ("Welcome to the ROT13 server at " + socket.toString() + "!\n").getBytes();
-			final byte[] newLine = "\n".getBytes();
+			final byte[] welcomeMessage = ("Welcome to the ROT13 server at " + socket.toString() + "!").getBytes();
 
 			// Start listening to the server socket.
 			socket.listen(new ServerSocketObserverAdapter()
@@ -40,8 +40,9 @@ public class Rot13Server
 				public void newConnection(NIOSocket nioSocket)
 				{
 					System.out.println("Client " + nioSocket.getIp() + " connected.");
-					nioSocket.write(welcomeMessage);
 					nioSocket.setPacketReader(new AsciiLinePacketReader());
+                    nioSocket.setPacketWriter(new AsciiLinePacketWriter());
+                    nioSocket.write(welcomeMessage);
 					nioSocket.listen(new SocketObserverAdapter()
 					{
 						public void packetReceived(NIOSocket socket, byte[] packet)
@@ -52,7 +53,7 @@ public class Rot13Server
 							// Disconnect on "+++"
 							if (line.equals("+++"))
 							{
-								socket.write("Thank you and good bye.\n".getBytes());
+								socket.write("Thank you and good bye.".getBytes());
 								socket.closeAfterWrite();
 								return;
 							}
@@ -74,7 +75,6 @@ public class Rot13Server
 
 							// Write the result and append a new line.
 							socket.write(builder.toString().getBytes());
-							socket.write(newLine);
 						}
 
 						public void connectionBroken(NIOSocket nioSocket, Exception exception)
