@@ -2,10 +2,12 @@ package naga.examples;
 
 import naga.NIOService;
 import naga.NIOSocket;
+import naga.NIOSocketSSL;
 import naga.SocketObserver;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 
 /**
  * Undocumented Class
@@ -29,6 +31,14 @@ public class SSLTester
 
                 public void connectionOpened(NIOSocket nioSocket)
                 {
+                    try
+                    {
+                        ((NIOSocketSSL)nioSocket).beginHandshake();
+                    }
+                    catch (SSLException e)
+                    {
+                        e.printStackTrace();
+                    }
                     System.out.println("*Connection opened");
                     nioSocket.write("GET /ssl-converter.html HTTP/1.0\r\n\r\n".getBytes());
                 }

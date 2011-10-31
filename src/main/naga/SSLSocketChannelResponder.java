@@ -1,11 +1,10 @@
 package naga;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * SSL-implementation on top of NIOSocket, wrapping all calls to the socket.
@@ -16,8 +15,6 @@ class SSLSocketChannelResponder implements NIOSocketSSL, SocketObserver
 {
     private final NIOSocket m_wrappedSocket;
     private final SSLPacketHandler m_packetHandler;
-    private final ConcurrentLinkedQueue<Object> m_startQueue;
-    private final AtomicBoolean m_isListening;
     private final NIOService m_nioService;
     private SocketObserver m_observer;
 
@@ -28,10 +25,18 @@ class SSLSocketChannelResponder implements NIOSocketSSL, SocketObserver
         m_packetHandler = new SSLPacketHandler(engine, m_wrappedSocket, this);
         m_wrappedSocket.setPacketReader(m_packetHandler);
         m_wrappedSocket.setPacketWriter(m_packetHandler);
-        m_startQueue = new ConcurrentLinkedQueue<Object>();
-        m_isListening = new AtomicBoolean(false);
         engine.setUseClientMode(client);
-        engine.beginHandshake();
+    }
+
+    public void beginHandshake() throws SSLException
+    {
+        if (getSSLEngine().getHandshakeStatus() != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) throw new IllegalStateException("Tried to start handshake during handshake.");
+        m_packetHandler.begin();
+    }
+
+    public boolean isEncrypted()
+    {
+        return m_packetHandler.isEncrypted();
     }
 
     public SSLEngine getSSLEngine()
@@ -39,68 +44,20 @@ class SSLSocketChannelResponder implements NIOSocketSSL, SocketObserver
         return m_packetHandler.getSSLEngine();
     }
 
-    private void emptyStartQueue(boolean isListening)
-    {
-        if (isListening)
-        {
-            Object o;
-            while ((o = m_startQueue.poll()) != null)
-            {
-                if (o instanceof byte[])
-                {
-                    m_wrappedSocket.write((byte[]) o);
-                }
-                else if (o instanceof Runnable)
-                {
-                    m_wrappedSocket.queue((Runnable)o);
-                }
-                else
-                {
-                    m_wrappedSocket.write((byte[])(((Object[])o)[0]), ((Object[])o)[1]);
-                }
-            }
-        }
-    }
 
     public boolean write(byte[] packet)
     {
-        if (!m_isListening.get())
-        {
-            m_startQueue.add(packet);
-            emptyStartQueue(m_isListening.get());
-            return true;
-        }
-        else
-        {
-            return m_wrappedSocket.write(packet);
-        }
+        return m_wrappedSocket.write(packet);
     }
 
     public boolean write(byte[] packet, Object tag)
     {
-        if (!m_isListening.get())
-        {
-            m_startQueue.add(new Object[] { packet,  tag });
-            emptyStartQueue(m_isListening.get());
-            return true;
-        }
-        else
-        {
-            return m_wrappedSocket.write(packet, tag);
-        }
+        return m_wrappedSocket.write(packet, tag);
     }
 
     public void queue(Runnable runnable)
     {
-        if (!m_isListening.get())
-        {
-            m_startQueue.add(runnable);
-            emptyStartQueue(m_isListening.get());
-        }
-        else
-        {
-            m_wrappedSocket.queue(runnable);
-        }
+        m_wrappedSocket.queue(runnable);
     }
 
     public long getBytesRead()
@@ -157,6 +114,7 @@ class SSLSocketChannelResponder implements NIOSocketSSL, SocketObserver
 
     public void closeAfterWrite()
     {
+        m_packetHandler.closeEngine();
         m_wrappedSocket.closeAfterWrite();
     }
 
@@ -217,11 +175,11 @@ class SSLSocketChannelResponder implements NIOSocketSSL, SocketObserver
     {
         try
         {
-            m_packetHandler.begin();
+            if (m_observer != null) m_observer.connectionOpened(this);
         }
-        catch (SSLException e)
+        catch (Exception e)
         {
-            closeDueToSSLException(e);
+            m_nioService.notifyException(e);
         }
     }
     
@@ -241,7 +199,7 @@ class SSLSocketChannelResponder implements NIOSocketSSL, SocketObserver
     {
         try
         {
-            if (m_isListening.get() && m_observer != null) m_observer.packetReceived(this, packet);
+            if (m_observer != null) m_observer.packetReceived(this, packet);
         }
         catch (Exception e)
         {
@@ -253,7 +211,7 @@ class SSLSocketChannelResponder implements NIOSocketSSL, SocketObserver
     {
         try
         {
-            if (m_isListening.get() && m_observer != null) m_observer.packetSent(this, tag);
+            if (m_observer != null) m_observer.packetSent(this, tag);
         }
         catch (Exception e)
         {
@@ -261,18 +219,4 @@ class SSLSocketChannelResponder implements NIOSocketSSL, SocketObserver
         }
     }
 
-    public void handshakeCompleted()
-    {
-        emptyStartQueue(true);
-        m_isListening.set(true);
-        emptyStartQueue(true);
-        try
-        {
-            if (m_observer != null) m_observer.connectionOpened(this);
-        }
-        catch (Exception e)
-        {
-            m_nioService.notifyException(e);
-        }
-    }
 }

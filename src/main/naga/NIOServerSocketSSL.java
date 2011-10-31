@@ -15,4 +15,5 @@ public interface NIOServerSocketSSL extends NIOServerSocket
      * @return the SSLContext.
      */
     public SSLContext getSSLContext();
+
 }

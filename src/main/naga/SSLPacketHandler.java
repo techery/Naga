@@ -7,6 +7,7 @@ import naga.packetwriter.RawPacketWriter;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
+import java.io.EOFException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -37,6 +38,7 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
     private ByteBuffer[] m_initialOutBuffer;
     private final NIOSocket m_socket;
     private final SSLSocketChannelResponder m_responder;
+    private boolean m_sslInitiated;
 
     public SSLPacketHandler(SSLEngine engine, NIOSocket socket, SSLSocketChannelResponder responder)
     {
@@ -46,6 +48,7 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
         m_writer = RawPacketWriter.INSTANCE;
         m_reader = RawPacketReader.INSTANCE;
         m_responder = responder;
+        m_sslInitiated = false;
     }
 
     public PacketReader getReader()
@@ -70,6 +73,7 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
 
     private void queueSSLTasks()
     {
+        if (!m_sslInitiated) return;
         int tasksScheduled = 0;
         Runnable task;
         while ((task = m_engine.getDelegatedTask()) != null)
@@ -98,6 +102,11 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
 
     public byte[] nextPacket(ByteBuffer byteBuffer) throws ProtocolViolationException
     {
+        if (!m_sslInitiated)
+        {
+            return m_reader.nextPacket(byteBuffer);
+        }
+
         try
         {
             // Retrieve the local buffer.
@@ -115,9 +124,9 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
                     // This should never happen as we are ensuring the buffer is large enough.
                     throw new ProtocolViolationException("SSL Buffer Overflow");
                 case CLOSED:
-                    // We recieved a close, just ignore for now.
+                    m_responder.connectionBroken(m_socket, new EOFException("SSL Connection closed"));
                     return null;
-                default:
+                case OK:
                     // Do nothing, just follow the flow.
             }
             // We might need to queue tasks or send data as a response to this packet.
@@ -134,6 +143,7 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
 
     private void reactToHandshakeStatus(SSLEngineResult.HandshakeStatus status)
     {
+        if (!m_sslInitiated) return;
         switch (status)
         {
             case NOT_HANDSHAKING:
@@ -143,7 +153,6 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
                 queueSSLTasks();
                 break;
             case FINISHED:
-                m_responder.handshakeCompleted();
                 m_socket.write(new byte[0]);
                 break;
             case NEED_WRAP:
@@ -169,6 +178,11 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
 
     public ByteBuffer[] write(ByteBuffer[] byteBuffers)
     {
+        if (!m_sslInitiated)
+        {
+            return m_writer.write(byteBuffers);
+        }
+
         // Check if we are done handshaking.
         if (m_engine.getHandshakeStatus() != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)
         {
@@ -265,6 +279,19 @@ public class SSLPacketHandler implements PacketReader, PacketWriter
     void begin() throws SSLException
     {
         m_engine.beginHandshake();
+        m_sslInitiated = true;
         reactToHandshakeStatus(m_engine.getHandshakeStatus());
+    }
+
+    public void closeEngine()
+    {
+        if (!m_sslInitiated) return;
+        m_engine.closeOutbound();
+        m_responder.write(new byte[0]);
+    }
+
+    public boolean isEncrypted()
+    {
+        return m_sslInitiated;
     }
 }

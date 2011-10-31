@@ -1,6 +1,7 @@
 package naga;
 
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 
 /**
  * Interface for a SSL Socket
@@ -15,4 +16,14 @@ public interface NIOSocketSSL extends NIOSocket
      * @return an SSLEngine.
      */
     SSLEngine getSSLEngine();
+
+    /**
+     * Initiates SSL-handshake, starts encrypted communication.
+     */
+    void beginHandshake() throws SSLException;
+
+    /**
+     * @return true if handshake is initiated and consequent data will be encrypted.
+     */
+    boolean isEncrypted();
 }
