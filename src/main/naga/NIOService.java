@@ -613,7 +613,7 @@ public class NIOService
 		{
 			try
 			{
-				SelectionKey key = m_channelResponder.getChannel().register(m_selector, 0);
+				SelectionKey key = m_channelResponder.getChannel().register(m_selector, m_channelResponder.getChannel().validOps());
 				m_channelResponder.setKey(key);
 				key.attach(m_channelResponder);
 			}

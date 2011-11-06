@@ -56,7 +56,7 @@ class ServerSocketChannelResponder extends ChannelResponder implements NIOServer
 
 	public void keyInitialized()
 	{
-		// Do nothing, since the accept automatically will be set.
+        addInterest(SelectionKey.OP_ACCEPT);
 	}
 
 	public ServerSocketChannel getChannel()
