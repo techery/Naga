@@ -52,7 +52,7 @@ class SocketReader
         // Clear the buffer.
         buffer.clear();
 
-        // Create an offset if there is unconsumed bytes.
+        // Create an offset if there are unconsumed bytes.
         if (m_previousBytes != null)
         {
             buffer.position(m_previousBytes.remaining());
