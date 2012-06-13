@@ -64,16 +64,16 @@
 
 	<target name="build" depends="compile, javadoc, create_manifest" description="Build jar">
 		<buildnumber file="version.properties"/>
-		<jar destfile="${dist.dir}/naga-no-em-${major.version}_${minor.version}-r${build.number}.jar"
+		<jar destfile="${dist.dir}/naga-no-em-${major.version}_${minor.version}.jar"
 		     excludes="**/examples/**,**/eventmachine/**"
 		     basedir="${build.classes.dir}" manifest="${build.classes.dir}/META-INF/MANIFEST.MF"/>
-		<jar destfile="${dist.dir}/naga-${major.version}_${minor.version}-r${build.number}.jar"
+		<jar destfile="${dist.dir}/naga-${major.version}_${minor.version}.jar"
 		     excludes="**/examples/**"
 		     basedir="${build.classes.dir}" manifest="${build.classes.dir}/META-INF/MANIFEST.MF"/>
 		<copy todir="${build.classes.dir}/src">
 			<fileset dir="src/main/"/>
 		</copy>
-		<jar destfile="_DIST/naga-debug-${major.version}_${minor.version}-r${build.number}.jar" manifest="_BUILD/classes/META-INF/MANIFEST.MF">
+		<jar destfile="_DIST/naga-debug-${major.version}_${minor.version}.jar" manifest="_BUILD/classes/META-INF/MANIFEST.MF">
 			<fileset dir="${build.classes.dir}" includes="**/*.java,**/*.class" excludes="**/package-info.java"/>
 			<fileset dir="${build.dir}" includes="docs/**/*"/>
 		</jar>
