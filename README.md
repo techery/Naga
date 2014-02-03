@@ -11,7 +11,7 @@ Naga contains the code needed to get NIO up and running without having to code p
 
 Here is an example opening a server socket:
 
-```
+```java
 NIOService service = new NIOService;
 NIOServerSocket serverSocket = service.openServerSocket(1234);
 serverSocket.setConnectionAcceptor(myAcceptor);
@@ -20,7 +20,7 @@ serverSocket.listen(myObserver);
 
 This is how working with a regular socket looks like:
 
-```
+```java
 NIOService service = new NIOService;
 NIOSocket serverSocket = service.openSocket("www.google.com", 1234);
 socket.listen(myObserver);
